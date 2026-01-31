@@ -10,6 +10,7 @@ const AddProductModal = ({ isOpen, onClose }) => {
     const [selectedIds, setSelectedIds] = useState([]);
     const [showDropdown, setShowDropdown] = useState(false);
     const [filteredProducts, setFilteredProducts] = useState([]);
+    const [error, setError] = useState('');
     const dropdownRef = useRef(null);
 
     // Handle click outside to close dropdown
@@ -27,8 +28,6 @@ const AddProductModal = ({ isOpen, onClose }) => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, [showDropdown]);
-
-    if (!isOpen) return null;
 
     const handleProductNameChange = (e) => {
         const value = e.target.value;
@@ -73,6 +72,12 @@ const AddProductModal = ({ isOpen, onClose }) => {
     const handleSubmit = (e) => {
         e.preventDefault();
 
+        // Validate
+        if (!formData.productName.trim() && selectedIds.length === 0) {
+            setError('Please enter a product name or select from suggestions');
+            return;
+        }
+
         // If items are selected from suggestions, add those with ALL their attributes
         if (selectedIds.length > 0) {
             selectedIds.forEach(id => {
@@ -85,9 +90,6 @@ const AddProductModal = ({ isOpen, onClose }) => {
         } else if (formData.productName.trim()) {
             // Otherwise add just the name as a basic product
             addProduct({ productName: formData.productName });
-        } else {
-            alert('Please enter a product name or select from suggestions');
-            return;
         }
 
         // Reset form
@@ -95,8 +97,22 @@ const AddProductModal = ({ isOpen, onClose }) => {
         setSelectedIds([]);
         setFilteredProducts([]);
         setShowDropdown(false);
+        setError('');
         onClose();
     };
+
+    const handleClose = () => {
+        setFormData({ productName: '' });
+        setSelectedIds([]);
+        setFilteredProducts([]);
+        setShowDropdown(false);
+        setError('');
+        onClose();
+    };
+
+    if (!isOpen) return null;
+
+    // ... (rest of functions)
 
     const selectedCount = selectedIds.length;
 
@@ -107,7 +123,7 @@ const AddProductModal = ({ isOpen, onClose }) => {
                 <div className="px-4 py-3 border-b border-slate-200 flex items-center justify-between bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-lg">
                     <h2 className="text-lg font-bold text-gray-800">Add Product</h2>
                     <button
-                        onClick={onClose}
+                        onClick={handleClose}
                         className="p-1 hover:bg-white/80 rounded-full transition-colors text-gray-600 hover:text-gray-800"
                     >
                         <X size={20} />
@@ -117,16 +133,16 @@ const AddProductModal = ({ isOpen, onClose }) => {
                 {/* Content */}
                 <div className="p-4">
                     <form id="product-form" onSubmit={handleSubmit} className="space-y-4">
+                        {error && (
+                            <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg border border-red-100 flex flex-col items-center">
+                                {error}
+                            </div>
+                        )}
 
                         {/* Product Name with Dropdown */}
                         <div className="flex flex-col gap-1.5 relative" ref={dropdownRef}>
                             <label className="text-xs font-semibold text-gray-700">
                                 Product Name <span className="text-red-500">*</span>
-                                {selectedCount > 0 && (
-                                    <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-[10px]">
-                                        {selectedCount} selected
-                                    </span>
-                                )}
                             </label>
                             <div className="relative">
                                 <input
@@ -142,7 +158,7 @@ const AddProductModal = ({ isOpen, onClose }) => {
 
                                 {/* Dropdown with existing products */}
                                 {showDropdown && filteredProducts.length > 0 && (
-                                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-xl max-h-64 overflow-y-auto">
+                                    <div className="absolute z-10 w-full mb-1 bottom-full bg-white border border-gray-300 rounded-md shadow-xl max-h-64 overflow-y-auto">
                                         <div className="sticky top-0 bg-gray-50 px-3 py-2 border-b border-gray-200 z-10 flex justify-between items-center">
                                             <span className="text-[10px] text-gray-600 font-bold uppercase tracking-wider">
                                                 Suggestions
@@ -181,7 +197,16 @@ const AddProductModal = ({ isOpen, onClose }) => {
                                 )}
                             </div>
                             {formData.productName && !showDropdown && selectedCount === 0 && (
-                                <p className="text-[10px] text-green-600 mt-1 font-medium italic">✓ New product will be created</p>
+                                <p className="text-[10px] text-green-600 mt-1 font-medium italic">
+                                    ✓ New Product: <span className="font-bold">{formData.productName}</span>
+                                </p>
+                            )}
+                            {selectedCount > 0 && (
+                                <div className="mt-1 flex justify-start">
+                                    <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-[10px]">
+                                        {selectedCount} selected
+                                    </span>
+                                </div>
                             )}
                         </div>
 
@@ -192,7 +217,7 @@ const AddProductModal = ({ isOpen, onClose }) => {
                 <div className="px-4 py-3 border-t border-gray-200 bg-gray-50 rounded-b-lg flex justify-end gap-2">
                     <button
                         type="button"
-                        onClick={onClose}
+                        onClick={handleClose}
                         className="px-4 py-1.5 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-white font-medium transition-colors"
                     >
                         Cancel

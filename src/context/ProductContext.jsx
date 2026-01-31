@@ -155,10 +155,20 @@ export const ProductProvider = ({ children }) => {
     }, []);
 
     const addProduct = (productData) => {
-        // Generate new SN
-        const lastSn = products.length > 0 ? products[products.length - 1].sn : 'SN-0000';
-        const lastNum = parseInt(lastSn.split('-')[1]);
-        const newSn = `SN-${String(lastNum + 1).padStart(4, '0')}`;
+        // Find the actual highest SN number in the current list
+        let maxSnNum = 0;
+        if (products.length > 0) {
+            products.forEach(p => {
+                if (p.sn && p.sn.startsWith('SN-')) {
+                    const num = parseInt(p.sn.split('-')[1]);
+                    if (!isNaN(num) && num > maxSnNum) {
+                        maxSnNum = num;
+                    }
+                }
+            });
+        }
+
+        const newSn = `SN-${String(maxSnNum + 1).padStart(4, '0')}`;
 
         const newProduct = {
             ...productData,
@@ -170,7 +180,8 @@ export const ProductProvider = ({ children }) => {
             updatedDate: new Date().toISOString(),
         };
 
-        const updatedProducts = [...products, newProduct];
+        // Add to beginning of list (Top-down)
+        const updatedProducts = [newProduct, ...products];
         setProducts(updatedProducts);
         localStorage.setItem('products', JSON.stringify(updatedProducts));
         return newProduct;
@@ -201,17 +212,41 @@ export const ProductProvider = ({ children }) => {
         return newHistoryItem;
     };
 
-    const markQRGenerated = (productId) => {
+    const markQRGenerated = (productId, batchCount = 1) => {
         const product = products.find(p => p.id === productId);
         if (!product || product.qrGenerated) return;
 
         const updatedProducts = products.map(p =>
-            p.id === productId ? { ...p, qrGenerated: true } : p
+            p.id === productId ? { ...p, qrGenerated: true, batchCount: batchCount, qrGeneratedDate: new Date().toISOString() } : p
         );
         setProducts(updatedProducts);
         localStorage.setItem('products', JSON.stringify(updatedProducts));
 
-        recordHistory(productId, 'QR', 'QR Code Generated');
+        recordHistory(productId, 'QR', `QR Code Generated (Batch: ${batchCount})`);
+    };
+
+    const markBulkQRGenerated = (productIds, batchCount = 1) => {
+        const count = Number(batchCount) || 1;
+        const updatedProducts = products.map(p =>
+            productIds.includes(p.id) ? { ...p, qrGenerated: true, batchCount: count, qrGeneratedDate: new Date().toISOString() } : p
+        );
+        setProducts(updatedProducts);
+        localStorage.setItem('products', JSON.stringify(updatedProducts));
+
+        productIds.forEach(id => {
+            recordHistory(id, 'QR', `Bulk QR Generated (Batch: ${count})`);
+        });
+    };
+
+    const deleteProduct = (productId) => {
+        const product = products.find(p => p.id === productId);
+        if (!product) return;
+
+        const updatedProducts = products.filter(p => p.id !== productId);
+        setProducts(updatedProducts);
+        localStorage.setItem('products', JSON.stringify(updatedProducts));
+
+        recordHistory(productId, 'DL', `Product Deleted: ${product.productName}`);
     };
 
     const updateProduct = (updatedProduct) => {
@@ -229,6 +264,8 @@ export const ProductProvider = ({ children }) => {
             updateProduct,
             clearAndReloadDummy,
             markQRGenerated,
+            markBulkQRGenerated,
+            deleteProduct,
             recordHistory
         }}>
             {children}

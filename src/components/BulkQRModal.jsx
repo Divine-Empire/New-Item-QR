@@ -1,25 +1,133 @@
 import React, { useState } from 'react';
 import Barcode from 'react-barcode';
-import { X, CheckCircle, AlertCircle, Barcode as BarcodeIcon } from 'lucide-react';
+import jsPDF from 'jspdf';
+import { X, CheckCircle, AlertCircle, Barcode as BarcodeIcon, Download, Printer } from 'lucide-react';
 import { useProduct } from '../context/ProductContext';
 
 const BulkQRModal = ({ isOpen, onClose, products, onComplete }) => {
-    const { markQRGenerated } = useProduct();
+    const { markQRGenerated, markBulkQRGenerated } = useProduct();
+
+    const [batchCount, setBatchCount] = useState(1);
+    const [isGenerating, setIsGenerating] = useState(false);
 
     if (!isOpen) return null;
 
-    const handleRegister = () => {
-        products.forEach(product => {
-            markQRGenerated(product.id);
-        });
-        if (onComplete) {
-            onComplete();
+    const handleDownloadAndRegister = async () => {
+        if (products.length === 0) return;
+        setIsGenerating(true);
+
+        try {
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pageWidth = 210;
+            const pageHeight = 297;
+            const margin = 15;
+            const cols = 4;
+            const rowGap = 20;
+            const colGap = 5;
+
+            let currentCol = 0;
+            let yOffset = margin + 20;
+
+            // Header
+            pdf.setFontSize(16);
+            pdf.text("Product Barcodes", pageWidth / 2, margin + 5, { align: 'center' });
+
+            // Flatten products based on batch count
+            const count = Number(batchCount) || 1;
+            const expandedProducts = [];
+            products.forEach(p => {
+                for (let i = 0; i < count; i++) {
+                    expandedProducts.push(p);
+                }
+            });
+
+            for (const product of expandedProducts) {
+                // We access the DOM element for the *unique* product ID
+                // Since duplicates can't share IDs in DOM, we grab the source unique element's SVG
+                const elementId = `barcode-modal-${product.id}`;
+                const hiddenContainer = document.getElementById(elementId);
+
+                // Fallback if not found (shouldn't happen if rendered)
+                if (!hiddenContainer) continue;
+
+                const targetElement = hiddenContainer.querySelector('svg');
+                if (!targetElement) continue;
+
+                const svgData = new XMLSerializer().serializeToString(targetElement);
+                const img = new Image();
+
+                await new Promise(resolve => {
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = 600;
+                        canvas.height = 300;
+                        const ctx = canvas.getContext('2d');
+                        ctx.fillStyle = 'white';
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                        const imgWidth = canvas.width;
+                        const imgHeight = (img.height / img.width) * imgWidth;
+                        ctx.drawImage(img, 0, 0, imgWidth, imgHeight);
+
+                        const imgData = canvas.toDataURL('image/png');
+                        const colWidth = (pageWidth - 2 * margin - (cols - 1) * colGap) / cols;
+                        const xPos = margin + currentCol * (colWidth + colGap);
+
+                        const drawWidth = colWidth - 8;
+                        const drawHeight = 20;
+                        const drawX = xPos + (colWidth - drawWidth) / 2;
+                        const unitHeight = drawHeight + 15;
+
+                        if (yOffset + unitHeight > pageHeight - margin) {
+                            pdf.addPage();
+                            yOffset = margin + 20;
+                            currentCol = 0;
+                        }
+
+                        pdf.addImage(imgData, 'PNG', drawX, yOffset, drawWidth, drawHeight);
+
+                        // Top text: SKU (Label)
+                        pdf.setFontSize(6);
+                        const topLabel = `${product.sku} (${product.model || product.sku})`;
+                        pdf.text(topLabel, xPos + colWidth / 2, yOffset - 2, { align: 'center', maxWidth: colWidth - 2 });
+
+                        // Bottom text: just the Label
+                        pdf.setFontSize(7);
+                        pdf.setFont(undefined, 'bold');
+                        pdf.text(product.model || product.sku, xPos + colWidth / 2, yOffset + drawHeight + 4, { align: 'center' });
+                        pdf.setFont(undefined, 'normal');
+
+                        currentCol++;
+                        if (currentCol >= cols) {
+                            currentCol = 0;
+                            yOffset += unitHeight + 10;
+                        }
+                        resolve();
+                    };
+                    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+                });
+            }
+
+            pdf.save(`barcodes-batch-${Date.now()}.pdf`);
+
+            // Mark all unique products as generated
+            markBulkQRGenerated(products.map(p => p.id), count);
+
+            if (onComplete) {
+                onComplete();
+            }
+            onClose();
+
+        } catch (error) {
+            console.error("Error generating PDF:", error);
+            alert("Failed to generate PDF. Please try again.");
+        } finally {
+            setIsGenerating(false);
         }
-        onClose(); // Close immediately after registration
     };
 
     const handleClose = () => {
-        onClose();
+        if (!isGenerating) onClose();
     };
 
     const generatedCount = products.filter(p => p.qrGenerated).length;
@@ -33,10 +141,10 @@ const BulkQRModal = ({ isOpen, onClose, products, onComplete }) => {
                         <BarcodeIcon size={24} className="text-light-blue-400" />
                         <div>
                             <h2 className="text-lg font-bold">
-                                {products.length === 0 ? 'No Products Selected' : 'Register Barcodes'}
+                                {products.length === 0 ? 'No Products Selected' : 'Generate & Download Barcodes'}
                             </h2>
                             <p className="text-white/60 text-sm">
-                                {products.length} {products.length === 1 ? 'product' : 'products'} in batch
+                                {products.length} {products.length === 1 ? 'product' : 'products'} selected
                             </p>
                         </div>
                     </div>
@@ -47,11 +155,62 @@ const BulkQRModal = ({ isOpen, onClose, products, onComplete }) => {
 
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto p-8 bg-slate-50/50">
+
+                    {/* Batch Settings */}
+                    {products.length > 0 && (
+                        <div className="mb-8 bg-white p-6 rounded-xl border border-blue-100 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-6">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-blue-50 text-blue-600 rounded-lg">
+                                    <Printer size={24} />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-slate-800">Print Settings</h3>
+                                    <p className="text-sm text-slate-500">How many copies per product?</p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                                <label className="text-sm font-semibold text-slate-700">Batch Quantity:</label>
+                                <div className="flex items-center border border-slate-300 rounded-lg bg-white overflow-hidden w-32">
+                                    <button
+                                        onClick={() => setBatchCount(Math.max(1, (Number(batchCount) || 1) - 1))}
+                                        className="px-3 py-2 hover:bg-slate-100 border-r border-slate-300 text-slate-600 transition-colors"
+                                    >
+                                        -
+                                    </button>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        max="100"
+                                        value={batchCount}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            if (val === '') setBatchCount('');
+                                            else setBatchCount(parseInt(val));
+                                        }}
+                                        onBlur={() => {
+                                            if (!batchCount || Number(batchCount) < 1) setBatchCount(1);
+                                            else if (Number(batchCount) > 100) setBatchCount(100);
+                                        }}
+                                        className="w-full text-center focus:outline-none font-bold text-slate-800"
+                                    />
+                                    <button
+                                        onClick={() => setBatchCount((Number(batchCount) || 0) + 1)}
+                                        className="px-3 py-2 hover:bg-slate-100 border-l border-slate-300 text-slate-600 transition-colors"
+                                    >
+                                        +
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     <div className="space-y-6">
+                        <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Preview ({products.length} items × {batchCount} copies = {products.length * batchCount} total)</h3>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                             {products.map((product) => (
                                 <div key={product.id} className={`bg-white p-4 rounded-xl border transition-all relative ${product.qrGenerated ? 'border-green-200 bg-green-50/10' : 'border-slate-200'
-                                    } text-center group`}>
+                                    } text-center group`} id={`barcode-modal-${product.id}`}>
                                     <div className="relative mx-auto w-fit space-y-2">
                                         <div className="flex flex-col items-center gap-1">
                                             <p className="text-[7px] font-bold text-slate-800 text-center truncate w-full">
@@ -74,6 +233,11 @@ const BulkQRModal = ({ isOpen, onClose, products, onComplete }) => {
                                                 <CheckCircle size={32} className="text-green-600 bg-white rounded-full p-1 shadow-sm" />
                                             </div>
                                         )}
+
+                                        {/* Batch indicator badge */}
+                                        <div className="absolute -top-2 -right-2 bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm z-10">
+                                            x{batchCount}
+                                        </div>
                                     </div>
                                     <p className="font-bold text-slate-900 text-[10px] mt-4 truncate">{product.sn}</p>
                                     <p className="text-slate-500 text-[9px] truncate">{product.productName}</p>
@@ -92,14 +256,24 @@ const BulkQRModal = ({ isOpen, onClose, products, onComplete }) => {
                         </div>
                     )}
                     <button
-                        onClick={handleRegister}
-                        className="w-full bg-light-blue-600 hover:bg-light-blue-700 text-white px-6 py-4 rounded-2xl flex items-center justify-center gap-2 font-bold transition-all shadow-xl shadow-light-blue-100 hover:-translate-y-0.5"
+                        onClick={handleDownloadAndRegister}
+                        disabled={isGenerating}
+                        className={`w-full bg-light-blue-600 hover:bg-light-blue-700 text-white px-6 py-4 rounded-2xl flex items-center justify-center gap-2 font-bold transition-all shadow-xl shadow-light-blue-100 hover:-translate-y-0.5 ${isGenerating ? 'opacity-70 cursor-wait' : ''}`}
                     >
-                        <BarcodeIcon size={20} />
-                        Register & View in History
+                        {isGenerating ? (
+                            <>
+                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                Generating PDF...
+                            </>
+                        ) : (
+                            <>
+                                <Download size={20} />
+                                Download Barcode
+                            </>
+                        )}
                     </button>
                     <p className="text-[10px] text-slate-400 text-center mt-3 uppercase tracking-widest font-black">
-                        DOWNLOADS ARE ENABLED ONLY IN THE HISTORY TAB
+                        Downloaded products will move to History
                     </p>
                 </div>
             </div>

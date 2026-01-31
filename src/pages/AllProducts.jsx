@@ -6,9 +6,10 @@ import EditProductModal from '../components/EditProductModal';
 import QRCodeModal from '../components/QRCodeModal';
 import BulkQRModal from '../components/BulkQRModal';
 import ProductHistory from './ProductHistory';
+import ConfirmModal from '../components/ConfirmModal';
 
 const AllProducts = ({ defaultTab = 'pending' }) => {
-    const { products, clearAndReloadDummy } = useProduct();
+    const { products, clearAndReloadDummy, deleteProduct } = useProduct();
     const [activeTab, setActiveTab] = useState(defaultTab); // 'pending', 'history'
 
     // Sync tab with prop if it changes (e.g. via sidebar navigation)
@@ -23,6 +24,15 @@ const AllProducts = ({ defaultTab = 'pending' }) => {
     const [selectedProducts, setSelectedProducts] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
 
+    // Confirmation Modal State
+    const [confirmModal, setConfirmModal] = useState({
+        isOpen: false,
+        title: '',
+        message: '',
+        isDanger: false,
+        onConfirm: () => { }
+    });
+
     const filteredProducts = products
         .filter(product => !product.qrGenerated)
         .filter(product =>
@@ -31,11 +41,35 @@ const AllProducts = ({ defaultTab = 'pending' }) => {
             product.category?.toLowerCase().includes(searchTerm.toLowerCase())
         );
 
+    const handleDeleteProduct = (product) => {
+        setConfirmModal({
+            isOpen: true,
+            title: 'Delete Product',
+            message: `Are you sure you want to permanently delete "${product.productName}"? This action cannot be undone.`,
+            isDanger: true,
+            confirmText: 'Delete',
+            onConfirm: () => {
+                deleteProduct(product.id);
+                // If it was selected, remove it from selection
+                if (selectedProducts.includes(product.id)) {
+                    setSelectedProducts(prev => prev.filter(id => id !== product.id));
+                }
+            }
+        });
+    };
+
     const handleReloadDummy = () => {
-        if (confirm('This will replace all products with fresh dummy data. Continue?')) {
-            clearAndReloadDummy();
-            setSelectedProducts([]);
-        }
+        setConfirmModal({
+            isOpen: true,
+            title: 'Reset Data',
+            message: 'This will replace all current products with fresh dummy data. All your changes will be lost. Do you want to continue?',
+            isDanger: true, // Resetting data is destructive
+            confirmText: 'Reset',
+            onConfirm: () => {
+                clearAndReloadDummy();
+                setSelectedProducts([]);
+            }
+        });
     };
 
     const handleShowQR = (product) => {
@@ -94,8 +128,8 @@ const AllProducts = ({ defaultTab = 'pending' }) => {
                             <BarcodeIcon size={18} />
                             <span className="hidden sm:inline">
                                 {selectedProducts.length > 0
-                                    ? `Register Barcodes (${selectedProducts.length})`
-                                    : 'Register Barcodes'
+                                    ? `Generate Barcode (${selectedProducts.length})`
+                                    : 'Generate Barcode'
                                 }
                             </span>
                         </button>
@@ -210,7 +244,11 @@ const AllProducts = ({ defaultTab = 'pending' }) => {
                                                         </div>
                                                     </td>
                                                     <td className="px-4 py-3 text-center">
-                                                        <button className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                                                        <button
+                                                            onClick={() => handleDeleteProduct(product)}
+                                                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                            title="Delete Product"
+                                                        >
                                                             <Plus className="rotate-45" size={18} />
                                                         </button>
                                                     </td>
@@ -233,7 +271,13 @@ const AllProducts = ({ defaultTab = 'pending' }) => {
                 {activeTab === 'history' && <ProductHistory />}
             </main>
 
-            <AddProductModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+            <AddProductModal
+                isOpen={isModalOpen}
+                onClose={() => {
+                    setIsModalOpen(false);
+                    setSelectedProducts([]);
+                }}
+            />
             <QRCodeModal
                 isOpen={isQRModalOpen}
                 onClose={() => setIsQRModalOpen(false)}
@@ -241,9 +285,21 @@ const AllProducts = ({ defaultTab = 'pending' }) => {
             />
             <BulkQRModal
                 isOpen={isBulkQROpen}
-                onClose={() => setIsBulkQROpen(false)}
+                onClose={() => {
+                    setIsBulkQROpen(false);
+                    setSelectedProducts([]);
+                }}
                 products={products.filter(p => selectedProducts.includes(p.id))}
                 onComplete={() => setSelectedProducts([])}
+            />
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                onConfirm={confirmModal.onConfirm}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                isDanger={confirmModal.isDanger}
+                confirmText={confirmModal.confirmText}
             />
             <EditProductModal
                 isOpen={isEditModalOpen}

@@ -1,9 +1,11 @@
 import React from 'react';
 import Barcode from 'react-barcode';
-import { X, ExternalLink } from 'lucide-react';
+import { X, ExternalLink, Check } from 'lucide-react';
 
 const QRCodeModal = ({ isOpen, onClose, product }) => {
     if (!isOpen || !product) return null;
+
+    const [copied, setCopied] = React.useState(false);
 
     // Create URL for the product view page
     const baseUrl = window.location.origin;
@@ -11,7 +13,8 @@ const QRCodeModal = ({ isOpen, onClose, product }) => {
 
     const handleCopyUrl = () => {
         navigator.clipboard.writeText(productUrl);
-        alert('URL copied to clipboard!');
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
     };
 
     return (
@@ -57,10 +60,13 @@ const QRCodeModal = ({ isOpen, onClose, product }) => {
                             <code className="text-[11px] text-light-blue-600 font-mono flex-1 truncate bg-white px-2 py-1 rounded border border-light-blue-100">{productUrl}</code>
                             <button
                                 onClick={handleCopyUrl}
-                                className="bg-white text-slate-400 hover:text-light-blue-600 p-2 rounded-lg border border-slate-200 hover:border-light-blue-200 transition-all shadow-sm hover:shadow"
-                                title="Copy URL"
+                                className={`p-2 rounded-lg border transition-all shadow-sm ${copied
+                                    ? 'bg-green-50 text-green-600 border-green-200'
+                                    : 'bg-white text-slate-400 hover:text-light-blue-600 border-slate-200 hover:border-light-blue-200 hover:shadow'
+                                    }`}
+                                title={copied ? "Copied!" : "Copy URL"}
                             >
-                                <ExternalLink size={16} />
+                                {copied ? <Check size={16} /> : <ExternalLink size={16} />}
                             </button>
                         </div>
                     </div>

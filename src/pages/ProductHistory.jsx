@@ -1,20 +1,26 @@
 import React, { useState } from 'react';
-import { Search, History as HistoryIcon, Download, CheckSquare, Square, Barcode as BarcodeIcon } from 'lucide-react';
+import { Search, History as HistoryIcon, Download, CheckSquare, Square, Barcode as BarcodeIcon, Eye } from 'lucide-react';
 import { useProduct } from '../context/ProductContext';
 import Barcode from 'react-barcode';
 import jsPDF from 'jspdf';
+import QRCodeModal from '../components/QRCodeModal';
 
 const ProductHistory = () => {
     const { products, markQRGenerated } = useProduct();
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedIds, setSelectedIds] = useState([]);
+    const [isQRModalOpen, setIsQRModalOpen] = useState(false);
+    const [selectedProduct, setSelectedProduct] = useState(null);
 
-    const filteredProducts = products.filter(product =>
-        product.productName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.sn?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.model?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredProducts = products
+        .filter(product => product.qrGenerated)
+        .filter(product =>
+            product.productName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            product.sn?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            product.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            product.model?.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+        .sort((a, b) => new Date(b.qrGeneratedDate || 0) - new Date(a.qrGeneratedDate || 0));
 
     const toggleSelect = (id) => {
         setSelectedIds(prev =>
@@ -29,6 +35,11 @@ const ProductHistory = () => {
         } else {
             setSelectedIds(downloadable.map(p => p.id));
         }
+    };
+
+    const handleShowQR = (product) => {
+        setSelectedProduct(product);
+        setIsQRModalOpen(true);
     };
 
     const handleBulkDownload = async () => {
@@ -149,17 +160,7 @@ const ProductHistory = () => {
                                 </button>
                             </div>
                         )}
-                        <button
-                            onClick={handleBulkDownload}
-                            disabled={selectedIds.length === 0}
-                            className={`flex-1 lg:flex-none flex items-center justify-center gap-2 px-6 py-2 rounded-lg font-bold transition-all ${selectedIds.length > 0
-                                ? 'bg-light-blue-600 text-white shadow-lg shadow-light-blue-100 hover:bg-light-blue-700'
-                                : 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
-                                }`}
-                        >
-                            <Download size={18} />
-                            Download Barcodes
-                        </button>
+
                     </div>
                 </div>
             </div>
@@ -201,7 +202,9 @@ const ProductHistory = () => {
                                 <th className="px-4 py-3 bg-slate-50 border-b border-slate-200">Serial No</th>
                                 <th className="px-4 py-3 bg-slate-50 border-b border-slate-200">Product Name</th>
                                 <th className="px-4 py-3 bg-slate-50 border-b border-slate-200">Code / SKU</th>
-                                <th className="px-4 py-3 text-center bg-slate-50 border-b border-slate-200 last:rounded-tr-xl">Status</th>
+                                <th className="px-4 py-3 text-center bg-slate-50 border-b border-slate-200">Copies</th>
+                                <th className="px-4 py-3 text-center bg-slate-50 border-b border-slate-200">Time</th>
+                                <th className="px-4 py-3 text-center bg-slate-50 border-b border-slate-200 last:rounded-tr-xl">Action</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
@@ -230,23 +233,31 @@ const ProductHistory = () => {
                                         <td className="px-4 py-3 text-slate-900 font-medium">{product.productName}</td>
                                         <td className="px-4 py-3 text-slate-600 text-[10px] uppercase tracking-wider">{product.sku}</td>
                                         <td className="px-4 py-3 text-center">
-                                            {product.qrGenerated ? (
-                                                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-green-50 text-green-700 text-[10px] font-bold uppercase">
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                                                    Generated
-                                                </span>
-                                            ) : (
-                                                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-amber-50 text-amber-700 text-[10px] font-bold uppercase">
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                                                    Pending
-                                                </span>
-                                            )}
+                                            <span className="px-2 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-bold border border-slate-200">
+                                                {product.batchCount || 1}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-3 text-center text-xs text-slate-500 font-medium">
+                                            {product.qrGeneratedDate
+                                                ? new Date(product.qrGeneratedDate).toLocaleString('en-US', {
+                                                    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                                                })
+                                                : '-'}
+                                        </td>
+                                        <td className="px-4 py-3 text-center">
+                                            <button
+                                                onClick={() => handleShowQR(product)}
+                                                className="p-1.5 text-light-blue-600 hover:bg-light-blue-50 rounded-lg transition-colors border border-transparent hover:border-light-blue-100"
+                                                title="View Barcode"
+                                            >
+                                                <Eye size={18} />
+                                            </button>
                                         </td>
                                     </tr>
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan="5" className="px-4 py-20 text-center">
+                                    <td colSpan="7" className="px-4 py-20 text-center">
                                         <div className="flex flex-col items-center justify-center text-slate-400">
                                             <HistoryIcon size={48} className="mb-4 opacity-20" />
                                             <p className="text-lg font-medium">No results found</p>
@@ -258,6 +269,12 @@ const ProductHistory = () => {
                     </table>
                 </div>
             </div>
+
+            <QRCodeModal
+                isOpen={isQRModalOpen}
+                onClose={() => setIsQRModalOpen(false)}
+                product={selectedProduct}
+            />
         </div>
     );
 };

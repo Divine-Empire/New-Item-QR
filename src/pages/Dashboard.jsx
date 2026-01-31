@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useProduct } from '../context/ProductContext';
-import { Package, TrendingUp, AlertCircle, CheckCircle, Calendar, ArrowRight, Barcode as BarcodeIcon, History } from 'lucide-react';
+import { Package, TrendingUp, AlertCircle, CheckCircle, Calendar, ArrowRight, Barcode as BarcodeIcon, History, IndianRupee } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const StatCard = ({ title, value, icon: Icon, color, colorLight }) => (
@@ -23,7 +23,7 @@ const Dashboard = () => {
     const { user } = useAuth();
     const { products } = useProduct();
 
-    // Calculate real stats from products data based on Pending and History
+    // Calculate real stats from products data
     const totalProducts = products.length;
     const pendingRegistration = products.filter(p => !p.qrGenerated).length;
     const registeredHistory = products.filter(p => p.qrGenerated).length;
@@ -37,24 +37,24 @@ const Dashboard = () => {
     return (
         <div className="space-y-6 h-full overflow-y-auto pr-2 p-4 lg:p-6">
             {/* Header */}
-            <div className="bg-gradient-to-r from-light-blue-500 to-light-blue-600 rounded-2xl p-4 sm:p-6 text-white">
+            <div className="bg-gradient-to-r from-light-blue-500 to-light-blue-600 rounded-2xl p-4 sm:p-6 text-white shadow-lg shadow-light-blue-200">
                 <div className="flex items-center gap-3 mb-2">
-                    <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm border border-white/10">
                         <span className="text-xl font-bold">{user?.name?.charAt(0) || 'U'}</span>
                     </div>
                     <div>
-                        <p className="text-white/80 text-sm">Welcome back,</p>
-                        <h1 className="text-xl sm:text-2xl font-bold">{user?.name}</h1>
+                        <p className="text-white/80 text-sm font-medium">Welcome back,</p>
+                        <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{user?.name}</h1>
                     </div>
                 </div>
-                <div className="flex items-center gap-2 text-white/70 text-sm mt-3">
+                <div className="flex items-center gap-2 text-white/70 text-sm mt-3 bg-white/10 w-fit px-3 py-1 rounded-full backdrop-blur-sm">
                     <Calendar size={14} />
                     {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                 </div>
             </div>
 
-            {/* Stats Grid - 2x2 on mobile */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            {/* Stats Grid - 3 items */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                 {stats.map((stat, index) => (
                     <StatCard key={index} {...stat} />
                 ))}
@@ -85,36 +85,47 @@ const Dashboard = () => {
                 </Link>
             </div>
 
-            {/* Removed Quick Stats Summary */}
-
             {/* Recent Items - Barcode Style */}
             <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
                 <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-                    <h3 className="font-bold text-slate-900">Recently Added</h3>
-                    <Link to="/products" className="text-light-blue-600 text-sm font-medium flex items-center gap-1 hover:underline">
-                        View All <ArrowRight size={14} />
+                    <h3 className="font-bold text-slate-900 flex items-center gap-2">
+                        <TrendingUp size={18} className="text-light-blue-600" />
+                        System Activity
+                    </h3>
+                    <Link to="/products?tab=history" className="text-light-blue-600 text-sm font-medium flex items-center gap-1 hover:underline">
+                        View History <ArrowRight size={14} />
                     </Link>
                 </div>
 
-                {products.length > 0 ? (
+                {products.filter(p => p.qrGenerated).length > 0 ? (
                     <div className="divide-y divide-slate-100">
-                        {products.slice(-5).reverse().map((product) => (
-                            <div key={product.id} className="p-4 hover:bg-slate-50 transition-colors">
-                                <div className="flex items-start justify-between gap-3">
-                                    <div className="flex-1 min-w-0">
-                                        <p className="font-medium text-slate-900 truncate">{product.sku}</p>
-                                        <div className="flex flex-wrap items-center gap-2 mt-1">
-                                            <span className="text-xs text-light-blue-600 font-mono bg-light-blue-50 px-2 py-0.5 rounded">{product.sn}</span>
-                                            <span className="text-xs text-slate-500 truncate">{product.productName}</span>
+                        {products
+                            .filter(p => p.qrGenerated)
+                            .sort((a, b) => new Date(b.qrGeneratedDate || 0) - new Date(a.qrGeneratedDate || 0))
+                            .slice(0, 5)
+                            .map((product) => (
+                                <div key={product.id} className="p-4 hover:bg-slate-50 transition-colors">
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-medium text-slate-900 truncate">{product.productName}</p>
+                                            <div className="flex flex-wrap items-center gap-2 mt-1">
+                                                <span className="text-xs text-light-blue-600 font-mono bg-light-blue-50 px-2 py-0.5 rounded">{product.sn}</span>
+                                                <span className="text-xs text-slate-500 truncate">{product.sku}</span>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <span className="block px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-green-100 text-green-700 mb-1">
+                                                Generated
+                                            </span>
+                                            <span className="text-[10px] text-slate-400">
+                                                {product.qrGeneratedDate
+                                                    ? new Date(product.qrGeneratedDate).toLocaleString('en-US', { hour: '2-digit', minute: '2-digit' })
+                                                    : 'Just now'}
+                                            </span>
                                         </div>
                                     </div>
-                                    <span className={`shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${product.qrGenerated ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
-                                        }`}>
-                                        {product.qrGenerated ? 'Registered' : 'Pending'}
-                                    </span>
                                 </div>
-                            </div>
-                        ))}
+                            ))}
                     </div>
                 ) : (
                     <div className="p-8 text-center text-slate-500">
