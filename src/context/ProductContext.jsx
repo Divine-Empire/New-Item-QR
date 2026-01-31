@@ -225,16 +225,26 @@ export const ProductProvider = ({ children }) => {
         recordHistory(productId, 'QR', `QR Code Generated (Batch: ${batchCount})`);
     };
 
-    const markBulkQRGenerated = (productIds, batchCount = 1) => {
-        const count = Number(batchCount) || 1;
-        const updatedProducts = products.map(p =>
-            productIds.includes(p.id) ? { ...p, qrGenerated: true, batchCount: count, qrGeneratedDate: new Date().toISOString() } : p
-        );
+    const markBulkQRGenerated = (updates) => {
+        // updates is an array of { id, count }
+        const updatedProducts = products.map(p => {
+            const update = updates.find(u => u.id === p.id);
+            if (update) {
+                return {
+                    ...p,
+                    qrGenerated: true,
+                    batchCount: update.count,
+                    qrGeneratedDate: new Date().toISOString()
+                };
+            }
+            return p;
+        });
+
         setProducts(updatedProducts);
         localStorage.setItem('products', JSON.stringify(updatedProducts));
 
-        productIds.forEach(id => {
-            recordHistory(id, 'QR', `Bulk QR Generated (Batch: ${count})`);
+        updates.forEach(update => {
+            recordHistory(update.id, 'QR', `Bulk QR Generated (Batch: ${update.count})`);
         });
     };
 

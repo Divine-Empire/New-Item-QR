@@ -7,8 +7,57 @@ import { useProduct } from '../context/ProductContext';
 const BulkQRModal = ({ isOpen, onClose, products, onComplete }) => {
     const { markQRGenerated, markBulkQRGenerated } = useProduct();
 
-    const [batchCount, setBatchCount] = useState(1);
+    const [batchCount, setBatchCount] = useState(1); // Global "Set All" value
+    const [counts, setCounts] = useState({}); // Individual counts
     const [isGenerating, setIsGenerating] = useState(false);
+
+    // Initialize individual counts when products change or modal opens
+    React.useEffect(() => {
+        if (isOpen && products.length > 0) {
+            const initialCounts = {};
+            products.forEach(p => {
+                initialCounts[p.id] = 1;
+            });
+            setCounts(initialCounts);
+            setBatchCount(1);
+        }
+    }, [isOpen, products]);
+
+    // Update all counts when global batch count changes
+    const handleGlobalBatchChange = (value) => {
+        const newVal = Math.max(1, Math.min(100, Number(value) || 1));
+        setBatchCount(newVal);
+
+        const newCounts = {};
+        products.forEach(p => {
+            newCounts[p.id] = newVal;
+        });
+        setCounts(newCounts);
+    };
+
+    const handleIndividualCountChange = (id, delta) => {
+        setCounts(prev => ({
+            ...prev,
+            [id]: Math.max(1, Math.min(100, (Number(prev[id]) || 1) + delta))
+        }));
+    };
+
+    const handleIndividualInput = (id, val) => {
+        if (val === '') {
+            setCounts(prev => ({ ...prev, [id]: '' }));
+        } else {
+            setCounts(prev => ({ ...prev, [id]: parseInt(val) }));
+        }
+    };
+
+    const handleIndividualBlur = (id) => {
+        setCounts(prev => {
+            let val = Number(prev[id]);
+            if (!val || val < 1) val = 1;
+            if (val > 100) val = 100;
+            return { ...prev, [id]: val };
+        });
+    };
 
     if (!isOpen) return null;
 
@@ -32,10 +81,10 @@ const BulkQRModal = ({ isOpen, onClose, products, onComplete }) => {
             pdf.setFontSize(16);
             pdf.text("Product Barcodes", pageWidth / 2, margin + 5, { align: 'center' });
 
-            // Flatten products based on batch count
-            const count = Number(batchCount) || 1;
+            // Flatten products based on individual counts
             const expandedProducts = [];
             products.forEach(p => {
+                const count = Number(counts[p.id]) || 1;
                 for (let i = 0; i < count; i++) {
                     expandedProducts.push(p);
                 }
@@ -110,8 +159,13 @@ const BulkQRModal = ({ isOpen, onClose, products, onComplete }) => {
 
             pdf.save(`barcodes-batch-${Date.now()}.pdf`);
 
-            // Mark all unique products as generated
-            markBulkQRGenerated(products.map(p => p.id), count);
+            // Mark all unique products as generated with their specific counts
+            const updates = products.map(p => ({
+                id: p.id,
+                count: Number(counts[p.id]) || 1
+            }));
+
+            markBulkQRGenerated(updates);
 
             if (onComplete) {
                 onComplete();
@@ -131,6 +185,9 @@ const BulkQRModal = ({ isOpen, onClose, products, onComplete }) => {
     };
 
     const generatedCount = products.filter(p => p.qrGenerated).length;
+
+    // Calculate total barcodes to be generated
+    const totalBarcodes = products.reduce((acc, p) => acc + (Number(counts[p.id]) || 1), 0);
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
@@ -165,15 +222,15 @@ const BulkQRModal = ({ isOpen, onClose, products, onComplete }) => {
                                 </div>
                                 <div>
                                     <h3 className="font-bold text-slate-800">Print Settings</h3>
-                                    <p className="text-sm text-slate-500">How many copies per product?</p>
+                                    <p className="text-sm text-slate-500">Set quantity for ALL or adjust individually below</p>
                                 </div>
                             </div>
 
                             <div className="flex items-center gap-3">
-                                <label className="text-sm font-semibold text-slate-700">Batch Quantity:</label>
+                                <label className="text-sm font-semibold text-slate-700">Set All To:</label>
                                 <div className="flex items-center border border-slate-300 rounded-lg bg-white overflow-hidden w-32">
                                     <button
-                                        onClick={() => setBatchCount(Math.max(1, (Number(batchCount) || 1) - 1))}
+                                        onClick={() => handleGlobalBatchChange(batchCount - 1)}
                                         className="px-3 py-2 hover:bg-slate-100 border-r border-slate-300 text-slate-600 transition-colors"
                                     >
                                         -
@@ -183,19 +240,11 @@ const BulkQRModal = ({ isOpen, onClose, products, onComplete }) => {
                                         min="1"
                                         max="100"
                                         value={batchCount}
-                                        onChange={(e) => {
-                                            const val = e.target.value;
-                                            if (val === '') setBatchCount('');
-                                            else setBatchCount(parseInt(val));
-                                        }}
-                                        onBlur={() => {
-                                            if (!batchCount || Number(batchCount) < 1) setBatchCount(1);
-                                            else if (Number(batchCount) > 100) setBatchCount(100);
-                                        }}
+                                        onChange={(e) => handleGlobalBatchChange(e.target.value)}
                                         className="w-full text-center focus:outline-none font-bold text-slate-800"
                                     />
                                     <button
-                                        onClick={() => setBatchCount((Number(batchCount) || 0) + 1)}
+                                        onClick={() => handleGlobalBatchChange(batchCount + 1)}
                                         className="px-3 py-2 hover:bg-slate-100 border-l border-slate-300 text-slate-600 transition-colors"
                                     >
                                         +
@@ -206,7 +255,7 @@ const BulkQRModal = ({ isOpen, onClose, products, onComplete }) => {
                     )}
 
                     <div className="space-y-6">
-                        <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Preview ({products.length} items × {batchCount} copies = {products.length * batchCount} total)</h3>
+                        <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Preview ({products.length} items × variable copies = {totalBarcodes} total)</h3>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                             {products.map((product) => (
                                 <div key={product.id} className={`bg-white p-4 rounded-xl border transition-all relative ${product.qrGenerated ? 'border-green-200 bg-green-50/10' : 'border-slate-200'
@@ -234,9 +283,30 @@ const BulkQRModal = ({ isOpen, onClose, products, onComplete }) => {
                                             </div>
                                         )}
 
-                                        {/* Batch indicator badge */}
-                                        <div className="absolute -top-2 -right-2 bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm z-10">
-                                            x{batchCount}
+                                        {/* Individual Quantity Control */}
+                                        <div className="absolute -top-3 -right-3 z-10 flex items-center bg-white rounded-lg shadow-md border border-slate-200 overflow-hidden scale-90">
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); handleIndividualCountChange(product.id, -1); }}
+                                                className="px-2 py-1 hover:bg-slate-100 border-r border-slate-200 text-slate-600 text-xs font-bold"
+                                            >
+                                                -
+                                            </button>
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                max="100"
+                                                value={counts[product.id] === undefined ? 1 : counts[product.id]}
+                                                onChange={(e) => handleIndividualInput(product.id, e.target.value)}
+                                                onBlur={() => handleIndividualBlur(product.id)}
+                                                onClick={(e) => e.stopPropagation()}
+                                                className="w-10 text-center text-xs font-bold text-blue-600 focus:outline-none focus:bg-slate-50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                            />
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); handleIndividualCountChange(product.id, 1); }}
+                                                className="px-2 py-1 hover:bg-slate-100 border-l border-slate-200 text-slate-600 text-xs font-bold"
+                                            >
+                                                +
+                                            </button>
                                         </div>
                                     </div>
                                     <p className="font-bold text-slate-900 text-[10px] mt-4 truncate">{product.sn}</p>
@@ -268,7 +338,7 @@ const BulkQRModal = ({ isOpen, onClose, products, onComplete }) => {
                         ) : (
                             <>
                                 <Download size={20} />
-                                Download Barcode
+                                Download Barcodes ({totalBarcodes})
                             </>
                         )}
                     </button>

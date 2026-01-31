@@ -1,6 +1,6 @@
 import React from 'react';
 import Barcode from 'react-barcode';
-import { X, ExternalLink, Check } from 'lucide-react';
+import { X, ExternalLink, Check, Download } from 'lucide-react';
 
 const QRCodeModal = ({ isOpen, onClose, product }) => {
     if (!isOpen || !product) return null;
@@ -17,6 +17,43 @@ const QRCodeModal = ({ isOpen, onClose, product }) => {
         setTimeout(() => setCopied(false), 2000);
     };
 
+    const handleDownload = () => {
+        const barcodeElement = document.getElementById(`history-barcode-${product.id}`);
+        if (!barcodeElement) return;
+
+        const svg = barcodeElement.querySelector('svg');
+        if (!svg) return;
+
+        const svgData = new XMLSerializer().serializeToString(svg);
+        const canvas = document.createElement('canvas');
+        canvas.width = 800;
+        canvas.height = 400;
+
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const img = new Image();
+        img.onload = () => {
+            const imgWidth = canvas.width * 0.8;
+            const imgHeight = (img.height / img.width) * imgWidth;
+            const x = (canvas.width - imgWidth) / 2;
+            const y = (canvas.height - imgHeight) / 2;
+
+            ctx.drawImage(img, x, y, imgWidth, imgHeight);
+
+            canvas.toBlob((blob) => {
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `barcode-${product.sn || product.sku}.png`;
+                link.click();
+                URL.revokeObjectURL(url);
+            }, 'image/png');
+        };
+        img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+    };
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all animate-in fade-in zoom-in duration-200">
@@ -31,7 +68,7 @@ const QRCodeModal = ({ isOpen, onClose, product }) => {
                 {/* Content */}
                 <div className="p-8 flex flex-col items-center">
                     {/* Barcode (Line Barcode) */}
-                    <div className="w-full bg-white p-6 rounded-xl border border-slate-100 shadow-sm mb-6 flex flex-col items-center">
+                    <div id={`history-barcode-${product.id}`} className="w-full bg-white p-6 rounded-xl border border-slate-100 shadow-sm mb-6 flex flex-col items-center">
                         <p className="text-[10px] font-bold text-slate-800 text-center mb-2">
                             {product.sku} ({product.model || product.sku})
                         </p>
@@ -73,11 +110,20 @@ const QRCodeModal = ({ isOpen, onClose, product }) => {
                 </div>
 
                 {/* Footer */}
-                <div className="bg-slate-50 px-6 py-4 flex items-center justify-center gap-2 border-t border-slate-100">
-                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                    <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                        Active & Ready to Scan
-                    </p>
+                <div className="bg-slate-50 px-6 py-4 flex items-center justify-between gap-4 border-t border-slate-100">
+                    <button
+                        onClick={handleDownload}
+                        className="bg-light-blue-600 hover:bg-light-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 font-semibold text-sm transition-all shadow-sm hover:shadow"
+                    >
+                        <Download size={16} />
+                        Download Barcode
+                    </button>
+                    <div className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                        <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                            Active & Ready to Scan
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
