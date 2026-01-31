@@ -197,9 +197,11 @@ const AllProducts = ({ defaultTab = 'pending' }) => {
                             </div>
                         </div>
 
-                        {/* Table - Scrollable Container */}
-                        <div className="flex-1 overflow-auto px-6 pb-6">
-                            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        {/* Content Container */}
+                        <div className="flex-1 overflow-auto px-4 pb-6 md:px-6">
+
+                            {/* Desktop Table View */}
+                            <div className="hidden md:block bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                                 <table className="w-full text-left text-sm border-separate border-spacing-0">
                                     <thead className="sticky top-0 z-20 text-slate-700 font-semibold shadow-sm">
                                         <tr>
@@ -211,11 +213,11 @@ const AllProducts = ({ defaultTab = 'pending' }) => {
                                                     className="rounded border-slate-300 text-light-blue-600 focus:ring-light-blue-500"
                                                 />
                                             </th>
-                                            <th className="px-4 py-3 bg-slate-50">Serial No</th>
-                                            <th className="px-4 py-3 bg-slate-50">Product Name</th>
-                                            <th className="px-4 py-3 bg-slate-50">Code / SKU</th>
-                                            <th className="px-4 py-3 text-center bg-slate-50">Barcode</th>
-                                            <th className="px-4 py-3 text-center bg-slate-50">Delete</th>
+                                            <th className="px-4 py-3 bg-slate-50 border-b border-slate-200">Serial No</th>
+                                            <th className="px-4 py-3 bg-slate-50 border-b border-slate-200">Product Name</th>
+                                            <th className="px-4 py-3 bg-slate-50 border-b border-slate-200">Code / SKU</th>
+                                            <th className="px-4 py-3 text-center bg-slate-50 border-b border-slate-200">Barcode</th>
+                                            <th className="px-4 py-3 text-center bg-slate-50 border-b border-slate-200">Delete</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
@@ -263,6 +265,69 @@ const AllProducts = ({ defaultTab = 'pending' }) => {
                                         )}
                                     </tbody>
                                 </table>
+                            </div>
+
+                            {/* Mobile Card View */}
+                            <div className="md:hidden space-y-3">
+                                <div className="flex items-center justify-between px-1 mb-2">
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            checked={isAllSelected}
+                                            onChange={handleSelectAll}
+                                            className="rounded border-slate-300 text-light-blue-600 focus:ring-light-blue-500 w-4 h-4"
+                                            id="mobile-select-all"
+                                        />
+                                        <label htmlFor="mobile-select-all" className="text-sm font-medium text-slate-600">Select All</label>
+                                    </div>
+                                    <span className="text-xs text-slate-400">{filteredProducts.length} items</span>
+                                </div>
+
+                                {filteredProducts.length > 0 ? (
+                                    filteredProducts.map((product) => (
+                                        <div key={product.id} className={`bg-white rounded-xl p-4 shadow-sm border transition-all ${selectedProducts.includes(product.id) ? 'border-light-blue-300 ring-1 ring-light-blue-100' : 'border-slate-100'}`}>
+                                            <div className="flex items-start gap-3">
+                                                <div className="pt-1">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedProducts.includes(product.id)}
+                                                        onChange={() => handleSelectProduct(product.id)}
+                                                        className="rounded border-slate-300 text-light-blue-600 focus:ring-light-blue-500 w-5 h-5"
+                                                    />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex justify-between items-start mb-1">
+                                                        <h3 className="font-semibold text-slate-900 truncate pr-2">{product.productName}</h3>
+                                                        <span className="text-[10px] font-mono bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">{product.sn}</span>
+                                                    </div>
+                                                    <p className="text-xs text-slate-500 uppercase tracking-wider mb-3">{product.sku}</p>
+
+                                                    <div className="flex items-center justify-end gap-2 border-t border-slate-50 pt-3 mt-1">
+                                                        <button
+                                                            onClick={() => handleShowQR(product)}
+                                                            className="flex items-center gap-1.5 text-xs font-medium text-light-blue-600 bg-light-blue-50 px-3 py-1.5 rounded-lg active:bg-light-blue-100"
+                                                        >
+                                                            <BarcodeIcon size={14} />
+                                                            View QR
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteProduct(product)}
+                                                            className="flex items-center gap-1.5 text-xs font-medium text-red-600 bg-red-50 px-3 py-1.5 rounded-lg active:bg-red-100"
+                                                        >
+                                                            <Plus className="rotate-45" size={14} />
+                                                            Delete
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="text-center py-12 text-slate-400">
+                                        <Package size={48} className="mx-auto mb-3 opacity-20" />
+                                        <p>No products found</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

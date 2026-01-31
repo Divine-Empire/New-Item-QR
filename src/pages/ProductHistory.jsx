@@ -136,7 +136,7 @@ const ProductHistory = () => {
         <div className="flex flex-col h-full overflow-hidden">
             {/* Toolbar - Fixed Action at Top */}
             <div className="sticky top-0 z-30 bg-slate-50 p-6 pb-4">
-                <div className="flex flex-col lg:flex-row items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <div className="flex flex-col lg:flex-row items-center justify-between gap-4">
                     <div className="relative flex-1 max-w-md w-full">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                         <input
@@ -144,7 +144,7 @@ const ProductHistory = () => {
                             placeholder="Search history..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-100 focus:outline-none focus:ring-2 focus:ring-light-blue-500 bg-slate-50 text-sm"
+                            className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-light-blue-500 bg-white shadow-sm"
                         />
                     </div>
 
@@ -166,7 +166,7 @@ const ProductHistory = () => {
             </div>
 
             {/* Table Container - Scrollable area */}
-            <div className="flex-1 overflow-auto px-6 pb-6">
+            <div className="flex-1 overflow-auto px-4 pb-6 md:px-6">
                 {/* Hidden Assets for PDF Generation */}
                 <div className="hidden">
                     {products.map(p => (
@@ -182,8 +182,8 @@ const ProductHistory = () => {
                     ))}
                 </div>
 
-                {/* Table View */}
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                {/* Desktop Table View */}
+                <div className="hidden md:block bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                     <table className="w-full text-left text-sm border-separate border-spacing-0">
                         <thead className="sticky top-0 z-20 text-slate-700 font-semibold shadow-sm">
                             <tr>
@@ -267,6 +267,54 @@ const ProductHistory = () => {
                             )}
                         </tbody>
                     </table>
+                </div>
+
+                {/* Mobile Card View */}
+                <div className="md:hidden space-y-3">
+                    <div className="flex items-center justify-end px-1 mb-2">
+                        <span className="text-xs text-slate-400">{filteredProducts.length} items</span>
+                    </div>
+
+                    {filteredProducts.length > 0 ? (
+                        filteredProducts.map((product) => (
+                            <div key={product.id} className="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
+                                <div className="flex justify-between items-start mb-2">
+                                    <div>
+                                        <h3 className="font-semibold text-slate-900 line-clamp-1">{product.productName}</h3>
+                                        <p className="text-xs text-slate-500 uppercase tracking-wider">{product.sku}</p>
+                                    </div>
+                                    <span className="text-[10px] font-mono bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded ml-2 whitespace-nowrap">
+                                        {product.sn}
+                                    </span>
+                                </div>
+
+                                <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-50">
+                                    <div className="flex gap-3 text-xs text-slate-500">
+                                        <div className="flex items-center gap-1" title="Copies">
+                                            <span className="font-bold bg-slate-100 px-1.5 rounded">{product.batchCount || 1}</span>
+                                            <span>copies</span>
+                                        </div>
+                                        <div className="flex items-center gap-1" title="Generated Time">
+                                            <span>{product.qrGeneratedDate ? new Date(product.qrGeneratedDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}</span>
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        onClick={() => handleShowQR(product)}
+                                        className="flex items-center gap-1.5 text-xs font-medium text-light-blue-600 bg-light-blue-50 px-3 py-1.5 rounded-lg active:bg-light-blue-100 ml-auto"
+                                    >
+                                        <Eye size={14} />
+                                        View
+                                    </button>
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="text-center py-12 text-slate-400">
+                            <HistoryIcon size={48} className="mx-auto mb-3 opacity-20" />
+                            <p>No history found</p>
+                        </div>
+                    )}
                 </div>
             </div>
 
