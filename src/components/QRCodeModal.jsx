@@ -103,7 +103,7 @@ const QRCodeModal = ({ isOpen, onClose, product }) => {
                     <div class="page">
                         ${pageItems.map(item => `
                             <div class="cell">
-                                <div class="sku">${item.sku || item.productName}</div>
+                                <div class="sku">${item.productName}</div>
                                 ${item.svg}
                                 <div class="caption">${item.sku || item.sn}</div>
                             </div>
