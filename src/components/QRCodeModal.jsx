@@ -76,10 +76,14 @@ const QRCodeModal = ({ isOpen, onClose, product }) => {
                         font-size: 8px;
                         font-weight: 600;
                         margin-bottom: 2px;
-                        max-width: 100%;
-                        white-space: nowrap;
+                        width: 100%;
+                        text-align: center;
+                        line-height: 1.1;
+                        display: -webkit-box;
+                        -webkit-line-clamp: 2;
+                        -webkit-box-orient: vertical;
                         overflow: hidden;
-                        text-overflow: ellipsis;
+                        word-break: break-word;
                     }
                     svg {
                         max-width: 95%;
