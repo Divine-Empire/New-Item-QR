@@ -171,11 +171,14 @@ const BulkQRModal = ({ isOpen, onClose, products, onComplete }) => {
                             max-width: 100%;
                             height: 50px !important;
                             width: auto !important;
+                            display: block;
+                            margin: 0 auto;
                         }
                         .caption {
                             font-size: 10px;
                             font-weight: 800;
-                            margin-top: 0px;
+                            margin-top: 2px;
+                            line-height: 1;
                         }
                         @media print { 
                             body { background: white; } 
