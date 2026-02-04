@@ -54,28 +54,27 @@ const QRCodeModal = ({ isOpen, onClose, product }) => {
                         width: 210mm; 
                         height: 297mm; 
                         margin: 10mm auto; 
-                        padding: 10mm; 
+                        padding: 0mm; 
                         box-sizing: border-box; 
                         display: grid; 
                         grid-template-columns: repeat(4, 1fr); 
                         grid-template-rows: repeat(10, 1fr); 
-                        gap: 5px; 
+                        gap: 0px; 
                         page-break-after: always;
                         box-shadow: 0 0 10px rgba(0,0,0,0.1);
                     }
                     .cell { 
-                        border: 1px dashed #e2e8f0; 
                         display: flex; 
                         flex-direction: column; 
                         align-items: center; 
                         justify-content: center; 
-                        padding: 4px;
+                        padding: 0px;
                         overflow: hidden;
                     }
                     .sku {
-                        font-size: 8px;
+                        font-size: 11px;
                         font-weight: 600;
-                        margin-bottom: 2px;
+                        margin-bottom: 1px;
                         width: 100%;
                         text-align: center;
                         line-height: 1.1;
@@ -86,14 +85,14 @@ const QRCodeModal = ({ isOpen, onClose, product }) => {
                         word-break: break-word;
                     }
                     svg {
-                        max-width: 95%;
-                        height: 35px !important;
+                        max-width: 100%;
+                        height: 50px !important;
                         width: auto !important;
                     }
                     .caption {
-                        font-size: 8px;
+                        font-size: 10px;
                         font-weight: 800;
-                        margin-top: 2px;
+                        margin-top: 0px;
                     }
                     @media print { 
                         body { background: white; } 

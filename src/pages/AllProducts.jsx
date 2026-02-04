@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Search, RefreshCw, Barcode as BarcodeIcon, FileText, History as HistoryIcon, Package, Loader2 } from 'lucide-react';
+import { Plus, Search, RefreshCw, Barcode as BarcodeIcon, FileText, History as HistoryIcon, Package, Loader2, Filter } from 'lucide-react';
 import { useProduct } from '../context/ProductContext';
 import AddProductModal from '../components/AddProductModal';
 import EditProductModal from '../components/EditProductModal';
@@ -11,11 +11,18 @@ import ConfirmModal from '../components/ConfirmModal';
 const AllProducts = ({ defaultTab = 'pending' }) => {
     const { products, loading, refreshData } = useProduct();
     const [activeTab, setActiveTab] = useState(defaultTab); // 'pending', 'history'
+    const [sortOption, setSortOption] = useState('none'); // 'none', 'name', 'category' for pending; 'date' default for history
+    const [isSortOpen, setIsSortOpen] = useState(false);
 
     // Sync tab with prop if it changes (e.g. via sidebar navigation)
     React.useEffect(() => {
         setActiveTab(defaultTab);
+        // Reset sort when tab changes for better UX, or keep it depending on preference. 
+        // For history, default makes sense to be date. For pending, none/name.
+        if (defaultTab === 'history') setSortOption('date');
+        else setSortOption('none');
     }, [defaultTab]);
+
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isQRModalOpen, setIsQRModalOpen] = useState(false);
@@ -33,13 +40,21 @@ const AllProducts = ({ defaultTab = 'pending' }) => {
         onConfirm: () => { }
     });
 
-    const filteredProducts = products
+    const filteredProducts = React.useMemo(() => products
         .filter(product => !product.qrGenerated)
         .filter(product =>
             product.productName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             product.sn?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             product.category?.toLowerCase().includes(searchTerm.toLowerCase())
-        );
+        )
+        .sort((a, b) => {
+            if (sortOption === 'name') {
+                return (a.productName || '').localeCompare(b.productName || '');
+            } else if (sortOption === 'category') {
+                return (a.category || '').localeCompare(b.category || '');
+            }
+            return 0; // Default order (creation/insertion order usually)
+        }), [products, searchTerm, sortOption]);
 
     // Track if products have been loaded initially
     const hasInitiallyLoaded = React.useRef(false);
@@ -165,15 +180,65 @@ const AllProducts = ({ defaultTab = 'pending' }) => {
             </div>
 
             {/* Search Bar - Shifted Here as per request */}
-            <div className="relative max-w-md w-full md:w-80 pb-3 md:pb-0">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                <input
-                    type="text"
-                    placeholder="Search products..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-light-blue-500 bg-slate-50 focus:bg-white shadow-sm transition-colors text-sm"
-                />
+            {/* Search Bar & Sort */}
+            <div className="flex gap-2 w-full md:w-auto pb-3 md:pb-0">
+                <div className="relative max-w-md w-full md:w-80">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input
+                        type="text"
+                        placeholder="Search products..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-light-blue-500 bg-slate-50 focus:bg-white shadow-sm transition-colors text-sm"
+                    />
+                </div>
+
+                {/* Sort Dropdown */}
+                <div className="relative">
+                    <button
+                        onClick={() => setIsSortOpen(!isSortOpen)}
+                        className="h-full flex items-center gap-2 px-3 bg-white border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors shadow-sm min-w-[40px] justify-center md:min-w-fit"
+                        title="Sort"
+                    >
+                        <Filter size={18} />
+                        <span className="hidden md:inline text-sm font-medium">
+                            Sort
+                        </span>
+                    </button>
+
+                    {isSortOpen && (
+                        <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-100 rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                            {activeTab === 'history' && (
+                                <button
+                                    onClick={() => { setSortOption('date'); setIsSortOpen(false); }}
+                                    className={`w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 transition-colors ${sortOption === 'date' ? 'text-light-blue-600 font-medium bg-light-blue-50/50' : 'text-slate-600'}`}
+                                >
+                                    Recent First
+                                </button>
+                            )}
+                            <button
+                                onClick={() => { setSortOption('name'); setIsSortOpen(false); }}
+                                className={`w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 transition-colors ${sortOption === 'name' ? 'text-light-blue-600 font-medium bg-light-blue-50/50' : 'text-slate-600'}`}
+                            >
+                                Item Name (A-Z)
+                            </button>
+                            <button
+                                onClick={() => { setSortOption('category'); setIsSortOpen(false); }}
+                                className={`w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 transition-colors ${sortOption === 'category' ? 'text-light-blue-600 font-medium bg-light-blue-50/50' : 'text-slate-600'}`}
+                            >
+                                Item Category (A-Z)
+                            </button>
+                            {activeTab === 'pending' && sortOption !== 'none' && (
+                                <button
+                                    onClick={() => { setSortOption('none'); setIsSortOpen(false); }}
+                                    className="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors border-t border-slate-50"
+                                >
+                                    Clear Sort
+                                </button>
+                            )}
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );
@@ -322,7 +387,7 @@ const AllProducts = ({ defaultTab = 'pending' }) => {
                     </div>
                 )}
 
-                {activeTab === 'history' && <ProductHistory searchTerm={searchTerm} />}
+                {activeTab === 'history' && <ProductHistory searchTerm={searchTerm} sortOption={sortOption} />}
             </main>
 
             <AddProductModal

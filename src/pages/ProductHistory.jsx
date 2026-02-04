@@ -1,24 +1,32 @@
 import React, { useState } from 'react';
-import { History as HistoryIcon, Eye } from 'lucide-react';
+import { History as HistoryIcon, Eye, Filter } from 'lucide-react';
 import { useProduct } from '../context/ProductContext';
 import Barcode from 'react-barcode';
 import QRCodeModal from '../components/QRCodeModal';
 
-const ProductHistory = ({ searchTerm = '' }) => {
+const ProductHistory = ({ searchTerm = '', sortOption = 'date' }) => {
     const { products } = useProduct();
     const [isQRModalOpen, setIsQRModalOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
 
     // Filter products that have QR Generated (Column F is not null)
-    const filteredProducts = products
-        .filter(product => product.qrGenerated) // Only show items where Column F has data
+    const filteredProducts = React.useMemo(() => products
+        .filter(product => product.qrGenerated || (product.status === 'Active' && product.sn))
         .filter(product =>
             product.productName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             product.sn?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             product.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             product.generatedBy?.toLowerCase().includes(searchTerm.toLowerCase())
         )
-        .sort((a, b) => new Date(b.qrGeneratedDate || 0) - new Date(a.qrGeneratedDate || 0));
+        .sort((a, b) => {
+            if (sortOption === 'name') {
+                return (a.productName || '').localeCompare(b.productName || '');
+            } else if (sortOption === 'category') {
+                return (a.category || '').localeCompare(b.category || '');
+            } else {
+                return new Date(b.qrGeneratedDate || 0) - new Date(a.qrGeneratedDate || 0);
+            }
+        }), [products, searchTerm, sortOption]);
 
     const handleShowQR = (product) => {
         setSelectedProduct(product);
@@ -29,9 +37,7 @@ const ProductHistory = ({ searchTerm = '' }) => {
         <div className="flex flex-col h-full overflow-hidden">
             {/* Search toolbar removed - controlled by parent */}
 
-            <div className="flex justify-end px-6 py-2 text-sm text-slate-500">
-                {filteredProducts.length} items
-            </div>
+            {/* Sort Toolbar Removed - Controlled by Parent */}
 
             {/* Table Container - Scrollable area */}
             <div className="flex-1 overflow-auto px-4 pb-6 md:px-6">
