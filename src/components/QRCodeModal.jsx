@@ -72,7 +72,7 @@ const QRCodeModal = ({ isOpen, onClose, product }) => {
                         overflow: hidden;
                     }
                     .sku {
-                        font-size: 11px;
+                        font-size: 8px;
                         font-weight: 600;
                         margin-bottom: 1px;
                         width: 100%;
