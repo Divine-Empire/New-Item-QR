@@ -137,7 +137,7 @@ const BulkQRModal = ({ isOpen, onClose, products, onComplete }) => {
                             width: 210mm; 
                             height: 297mm; 
                             margin: 10mm auto; 
-                            padding: 0mm; 
+                            padding: 5mm; 
                             box-sizing: border-box; 
                             display: grid; 
                             grid-template-columns: repeat(4, 1fr); 
@@ -151,13 +151,13 @@ const BulkQRModal = ({ isOpen, onClose, products, onComplete }) => {
                             flex-direction: column; 
                             align-items: center; 
                             justify-content: center; 
-                            padding: 0px;
+                            padding: 2px;
                             overflow: hidden;
                         }
                         .sku {
                             font-size: 8px;
-                            font-weight: 600;
-                            margin-bottom: 1px;
+                            font-weight: 900;
+                            margin-bottom: 2px;
                             width: 100%;
                             text-align: center;
                             line-height: 1.1;
