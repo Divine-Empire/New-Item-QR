@@ -150,30 +150,34 @@ const BulkQRModal = ({ isOpen, onClose, products, onComplete }) => {
                             display: flex; 
                             flex-direction: column; 
                             align-items: center; 
-                            justify-content: center; 
-                            padding: 2px;
+                            justify-content: space-between; 
+                            padding: 3px;
+                            height: 100%;
                             overflow: hidden;
                         }
                         .sku {
-                            font-size: 8px;
+                            font-size: 10px;
                             font-weight: 900;
                             margin-bottom: 2px;
                             width: 100%;
                             text-align: center;
-                            line-height: 1.1;
-                            display: -webkit-box;
-                            -webkit-line-clamp: 2;
-                            -webkit-box-orient: vertical;
+                            line-height: 1;
+                            /* Dynamic Height Strategy */
+                            flex-grow: 1;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
                             overflow: hidden;
                             word-break: break-word;
                         }
                         svg {
                             max-width: 100%;
-                            height: 50px !important;
+                            height: 45px !important;
                             width: auto !important;
                             display: block;
-                            margin: 0 auto;
-                        }
+                            margin: 2px auto;
+                            flex-shrink: 0;
+                            flex-shrink: 0;
                         .caption {
                             font-size: 10px;
                             font-weight: 800;
@@ -204,7 +208,7 @@ const BulkQRModal = ({ isOpen, onClose, products, onComplete }) => {
                             setTimeout(function() {
                                 window.print();
                                 window.close();
-                            }, 500);
+                            }, 1000);
                         }
                     </script>
                 </body>
