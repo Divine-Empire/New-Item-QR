@@ -103,13 +103,13 @@ const QRCodeModal = ({ isOpen, onClose, product }) => {
                         height: 45px !important;
                         width: auto !important;
                         display: block;
-                        margin: 2px auto;
+                        margin: 0 auto;
                         flex-shrink: 0;
                     }
                     .caption {
                         font-size: 10px;
                         font-weight: 800;
-                        margin-top: 2px;
+                        margin-top: 0px;
                         line-height: 1;
                     }
                     @media print { 
@@ -162,7 +162,7 @@ const QRCodeModal = ({ isOpen, onClose, product }) => {
                 <div className="p-8 flex flex-col items-center">
                     {/* Barcode (Line Barcode) */}
                     <div id={`history-barcode-${product.id}`} className="w-full bg-white p-6 rounded-xl border border-slate-100 shadow-sm mb-6 flex flex-col items-center">
-                        <p className="text-[10px] font-bold text-slate-800 text-center mb-2">
+                        <p className="text-[10px] font-bold text-slate-800 text-center mb-1">
                             {product.sku} ({product.model || product.sku})
                         </p>
                         <Barcode
@@ -172,7 +172,7 @@ const QRCodeModal = ({ isOpen, onClose, product }) => {
                             height={60}
                             displayValue={false}
                         />
-                        <p className="text-[12px] font-black text-slate-900 text-center mt-2">
+                        <p className="text-[12px] font-black text-slate-900 text-center mt-1">
                             {product.sku || product.sn}
                         </p>
                         <p className="text-[9px] text-center mt-2 font-bold text-slate-400 uppercase tracking-widest border-t border-slate-50 pt-2 w-full">Line Barcode</p>

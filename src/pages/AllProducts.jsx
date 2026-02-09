@@ -56,29 +56,44 @@ const AllProducts = ({ defaultTab = 'pending' }) => {
             return 0; // Default order (creation/insertion order usually)
         }), [products, searchTerm, sortOption]);
 
+    const filteredHistoryProducts = React.useMemo(() => products
+        .filter(product => product.qrGenerated || (product.status === 'Active' && product.sn))
+        .filter(product =>
+            product.productName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            product.sn?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            product.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            product.generatedBy?.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+        .sort((a, b) => {
+            if (sortOption === 'name') {
+                return (a.productName || '').localeCompare(b.productName || '');
+            } else if (sortOption === 'category') {
+                return (a.category || '').localeCompare(b.category || '');
+            } else {
+                return new Date(b.qrGeneratedDate || 0) - new Date(a.qrGeneratedDate || 0);
+            }
+        }), [products, searchTerm, sortOption]);
+
+    const activeFilteredProducts = activeTab === 'pending' ? filteredProducts : filteredHistoryProducts;
+
     // Track if products have been loaded initially
     const hasInitiallyLoaded = React.useRef(false);
 
-    // Clean up stale selections only after products are marked as generated
+    // Clean up stale selections - modified to be less aggressive during tab switching
     React.useEffect(() => {
-        // Skip the first load - don't clear selections when data initially loads
         if (!hasInitiallyLoaded.current) {
-            if (products.length > 0) {
-                hasInitiallyLoaded.current = true;
-            }
+            if (products.length > 0) hasInitiallyLoaded.current = true;
             return;
         }
 
-        // Only clean up if we have selections and products changed
         if (selectedProducts.length > 0) {
-            const validIds = products.filter(p => !p.qrGenerated).map(p => p.id);
-            const newSelected = selectedProducts.filter(id => validIds.includes(id));
-            // Only update if something actually changed
+            const allProductIds = products.map(p => p.id);
+            const newSelected = selectedProducts.filter(id => allProductIds.includes(id));
             if (newSelected.length !== selectedProducts.length) {
                 setSelectedProducts(newSelected);
             }
         }
-    }, [products]); // Only when products array changes
+    }, [products]);
 
     const handleShowQR = (product) => {
         setSelectedProduct(product);
@@ -92,7 +107,7 @@ const AllProducts = ({ defaultTab = 'pending' }) => {
 
     const handleSelectAll = (e) => {
         if (e.target.checked) {
-            setSelectedProducts(filteredProducts.map(p => p.id));
+            setSelectedProducts(activeFilteredProducts.map(p => p.id));
         } else {
             setSelectedProducts([]);
         }
@@ -108,7 +123,7 @@ const AllProducts = ({ defaultTab = 'pending' }) => {
         });
     };
 
-    const isAllSelected = filteredProducts.length > 0 && selectedProducts.length === filteredProducts.length;
+    const isAllSelected = activeFilteredProducts.length > 0 && selectedProducts.length === activeFilteredProducts.length;
 
     const renderHeader = () => (
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0 px-4 pt-3 md:px-6 md:pt-6">
@@ -116,7 +131,7 @@ const AllProducts = ({ defaultTab = 'pending' }) => {
                 {activeTab === 'pending' ? 'Pending Products' : 'Activity History'}
             </h1>
             <div className="flex flex-wrap gap-2">
-                {activeTab === 'pending' && (
+                {(activeTab === 'pending' || activeTab === 'history') && (
                     <>
                         <button
                             onClick={() => setIsBulkQROpen(true)}
@@ -129,26 +144,30 @@ const AllProducts = ({ defaultTab = 'pending' }) => {
                             <BarcodeIcon size={18} />
                             <span className="hidden sm:inline">
                                 {selectedProducts.length > 0
-                                    ? `Generate Barcode (${selectedProducts.length})`
+                                    ? `${activeTab === 'pending' ? 'Generate' : 'Print'} Barcode (${selectedProducts.length})`
                                     : 'Generate Barcode'
                                 }
                             </span>
                         </button>
-                        <button
-                            onClick={refreshData}
-                            className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg flex items-center gap-2 shadow-sm transition-colors border border-slate-200"
-                            title="Refresh data from Google Sheet"
-                        >
-                            <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
-                            <span className="hidden sm:inline">Refresh</span>
-                        </button>
-                        <button
-                            onClick={() => setIsModalOpen(true)}
-                            className="bg-light-blue-600 hover:bg-light-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-sm transition-colors"
-                        >
-                            <Plus size={20} />
-                            Add Product
-                        </button>
+                        {activeTab === 'pending' && (
+                            <>
+                                <button
+                                    onClick={refreshData}
+                                    className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg flex items-center gap-2 shadow-sm transition-colors border border-slate-200"
+                                    title="Refresh data from Google Sheet"
+                                >
+                                    <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+                                    <span className="hidden sm:inline">Refresh</span>
+                                </button>
+                                <button
+                                    onClick={() => setIsModalOpen(true)}
+                                    className="bg-light-blue-600 hover:bg-light-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-sm transition-colors"
+                                >
+                                    <Plus size={20} />
+                                    Add Product
+                                </button>
+                            </>
+                        )}
                     </>
                 )}
             </div>
@@ -387,7 +406,16 @@ const AllProducts = ({ defaultTab = 'pending' }) => {
                     </div>
                 )}
 
-                {activeTab === 'history' && <ProductHistory searchTerm={searchTerm} sortOption={sortOption} />}
+                {activeTab === 'history' && (
+                    <ProductHistory
+                        searchTerm={searchTerm}
+                        sortOption={sortOption}
+                        selectedProducts={selectedProducts}
+                        onSelectProduct={handleSelectProduct}
+                        onSelectAll={handleSelectAll}
+                        isAllSelected={isAllSelected}
+                    />
+                )}
             </main>
 
             <AddProductModal

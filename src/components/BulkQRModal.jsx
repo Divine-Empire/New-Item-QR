@@ -186,13 +186,13 @@ const BulkQRModal = ({ isOpen, onClose, products, onComplete }) => {
                             height: 45px !important;
                             width: auto !important;
                             display: block;
-                            margin: 2px auto;
+                            margin: 0 auto;
                             flex-shrink: 0;
                         }
                         .caption {
                             font-size: 10px;
                             font-weight: 800;
-                            margin-top: 2px;
+                            margin-top: 0px;
                             line-height: 1;
                         }
                         @media print { 
@@ -307,8 +307,8 @@ const BulkQRModal = ({ isOpen, onClose, products, onComplete }) => {
                             {products.map((product) => (
                                 <div key={product.id} className={`bg-white p-4 rounded-xl border transition-all relative ${product.qrGenerated ? 'border-green-200 bg-green-50/10' : 'border-slate-200'
                                     } text-center group`} id={`barcode-modal-${product.id}`}>
-                                    <div className="relative mx-auto w-fit space-y-2">
-                                        <div className="flex flex-col items-center gap-1">
+                                    <div className="relative mx-auto w-fit space-y-1">
+                                        <div className="flex flex-col items-center gap-0.5">
                                             <p className="text-[7px] font-bold text-slate-800 text-center truncate w-full">
                                                 {product.sku} ({product.model || product.sku})
                                             </p>

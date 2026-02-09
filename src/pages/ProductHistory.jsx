@@ -4,7 +4,7 @@ import { useProduct } from '../context/ProductContext';
 import Barcode from 'react-barcode';
 import QRCodeModal from '../components/QRCodeModal';
 
-const ProductHistory = ({ searchTerm = '', sortOption = 'date' }) => {
+const ProductHistory = ({ searchTerm = '', sortOption = 'date', selectedProducts = [], onSelectProduct, onSelectAll, isAllSelected }) => {
     const { products } = useProduct();
     const [isQRModalOpen, setIsQRModalOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
@@ -61,7 +61,15 @@ const ProductHistory = ({ searchTerm = '', sortOption = 'date' }) => {
                     <table className="w-full text-left text-sm border-separate border-spacing-0">
                         <thead className="text-slate-700 font-semibold">
                             <tr>
-                                <th className="px-4 py-3 bg-slate-50 border-b border-slate-200 first:rounded-tl-xl">Serial No</th>
+                                <th className="px-4 py-3 w-10 bg-slate-50 border-b border-slate-200 first:rounded-tl-xl text-center">
+                                    <input
+                                        type="checkbox"
+                                        checked={isAllSelected}
+                                        onChange={onSelectAll}
+                                        className="rounded border-slate-300 text-light-blue-600 focus:ring-light-blue-500"
+                                    />
+                                </th>
+                                <th className="px-4 py-3 bg-slate-50 border-b border-slate-200">Serial No</th>
                                 <th className="px-4 py-3 bg-slate-50 border-b border-slate-200">Category</th>
                                 <th className="px-4 py-3 bg-slate-50 border-b border-slate-200">Item Name</th>
                                 <th className="px-4 py-3 bg-slate-50 border-b border-slate-200">Item Code</th>
@@ -74,7 +82,15 @@ const ProductHistory = ({ searchTerm = '', sortOption = 'date' }) => {
                         <tbody className="divide-y divide-slate-100">
                             {filteredProducts.length > 0 ? (
                                 filteredProducts.map((product) => (
-                                    <tr key={product.id} className="hover:bg-slate-50 transition-colors">
+                                    <tr key={product.id} className={`hover:bg-slate-50 transition-colors ${selectedProducts.includes(product.id) ? 'bg-light-blue-50/30' : ''}`}>
+                                        <td className="px-4 py-3 text-center">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedProducts.includes(product.id)}
+                                                onChange={() => onSelectProduct(product.id)}
+                                                className="rounded border-slate-300 text-light-blue-600 focus:ring-light-blue-500"
+                                            />
+                                        </td>
                                         <td className="px-4 py-3 font-semibold text-light-blue-700">{product.sn}</td>
                                         <td className="px-4 py-3 text-slate-600">{product.category}</td>
                                         <td className="px-4 py-3 text-slate-900 font-medium">{product.productName}</td>
@@ -118,42 +134,67 @@ const ProductHistory = ({ searchTerm = '', sortOption = 'date' }) => {
 
                 {/* Mobile Card View */}
                 <div className="md:hidden space-y-3">
+                    <div className="bg-slate-50 py-2 flex items-center justify-between px-1 mb-2">
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="checkbox"
+                                checked={isAllSelected}
+                                onChange={onSelectAll}
+                                className="rounded border-slate-300 text-light-blue-600 focus:ring-light-blue-500 w-4 h-4"
+                                id="mobile-history-select-all"
+                            />
+                            <label htmlFor="mobile-history-select-all" className="text-sm font-medium text-slate-600">Select All</label>
+                        </div>
+                        <span className="text-xs text-slate-400">{filteredProducts.length} items</span>
+                    </div>
                     {filteredProducts.length > 0 ? (
                         filteredProducts.map((product) => (
-                            <div key={product.id} className="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
-                                <div className="flex justify-between items-start mb-2">
-                                    <div>
-                                        <h3 className="font-semibold text-slate-900 line-clamp-1">{product.productName}</h3>
-                                        <p className="text-xs text-slate-500 uppercase tracking-wider">{product.sku}</p>
+                            <div key={product.id} className={`bg-white rounded-xl p-4 shadow-sm border transition-all ${selectedProducts.includes(product.id) ? 'border-light-blue-300 ring-1 ring-light-blue-100' : 'border-slate-100'}`}>
+                                <div className="flex items-start gap-3">
+                                    <div className="pt-1">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedProducts.includes(product.id)}
+                                            onChange={() => onSelectProduct(product.id)}
+                                            className="rounded border-slate-300 text-light-blue-600 focus:ring-light-blue-500 w-5 h-5"
+                                        />
                                     </div>
-                                    <span className="text-[10px] font-mono bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded ml-2 whitespace-nowrap">
-                                        {product.sn}
-                                    </span>
-                                </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <div>
+                                                <h3 className="font-semibold text-slate-900 line-clamp-1">{product.productName}</h3>
+                                                <p className="text-xs text-slate-500 uppercase tracking-wider">{product.sku}</p>
+                                            </div>
+                                            <span className="text-[10px] font-mono bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded ml-2 whitespace-nowrap">
+                                                {product.sn}
+                                            </span>
+                                        </div>
 
-                                <div className="grid grid-cols-2 gap-2 text-xs text-slate-500 mb-3">
-                                    <div>
-                                        <span className="text-slate-400">Category:</span> {product.category}
-                                    </div>
-                                    <div>
-                                        <span className="text-slate-400">Qty:</span> {product.batchCount || 1}
-                                    </div>
-                                    <div>
-                                        <span className="text-slate-400">Date:</span> {product.qrGeneratedDate || '-'}
-                                    </div>
-                                    <div>
-                                        <span className="text-slate-400">By:</span> {product.generatedBy || '-'}
-                                    </div>
-                                </div>
+                                        <div className="grid grid-cols-2 gap-2 text-xs text-slate-500 mb-3">
+                                            <div>
+                                                <span className="text-slate-400">Category:</span> {product.category}
+                                            </div>
+                                            <div>
+                                                <span className="text-slate-400">Qty:</span> {product.batchCount || 1}
+                                            </div>
+                                            <div>
+                                                <span className="text-slate-400">Date:</span> {product.qrGeneratedDate || '-'}
+                                            </div>
+                                            <div>
+                                                <span className="text-slate-400">By:</span> {product.generatedBy || '-'}
+                                            </div>
+                                        </div>
 
-                                <div className="flex items-center justify-end border-t border-slate-50 pt-3 mt-1">
-                                    <button
-                                        onClick={() => handleShowQR(product)}
-                                        className="flex items-center gap-1.5 text-xs font-medium text-light-blue-600 bg-light-blue-50 px-3 py-1.5 rounded-lg active:bg-light-blue-100"
-                                    >
-                                        <Eye size={14} />
-                                        View
-                                    </button>
+                                        <div className="flex items-center justify-end border-t border-slate-50 pt-3 mt-1">
+                                            <button
+                                                onClick={() => handleShowQR(product)}
+                                                className="flex items-center gap-1.5 text-xs font-medium text-light-blue-600 bg-light-blue-50 px-3 py-1.5 rounded-lg active:bg-light-blue-100"
+                                            >
+                                                <Eye size={14} />
+                                                View
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         ))
