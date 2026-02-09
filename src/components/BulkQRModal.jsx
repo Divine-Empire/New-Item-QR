@@ -161,6 +161,17 @@ const BulkQRModal = ({ isOpen, onClose, products, onComplete }) => {
                             margin-bottom: 2px;
                             width: 100%;
                             text-align: center;
+                            line-height: 1.1;
+                            height: 25px; /* FIXED HEIGHT */
+                            display: -webkit-box;
+                            -webkit-line-clamp: 2;
+                            -webkit-box-orient: vertical;
+                            overflow: hidden;
+                            font-size: 10px;
+                            font-weight: 900;
+                            margin-bottom: 2px;
+                            width: 100%;
+                            text-align: center;
                             line-height: 1;
                             /* Dynamic Height Strategy */
                             flex-grow: 1;
@@ -177,7 +188,7 @@ const BulkQRModal = ({ isOpen, onClose, products, onComplete }) => {
                             display: block;
                             margin: 2px auto;
                             flex-shrink: 0;
-                            flex-shrink: 0;
+                        }
                         .caption {
                             font-size: 10px;
                             font-weight: 800;
@@ -304,8 +315,8 @@ const BulkQRModal = ({ isOpen, onClose, products, onComplete }) => {
                                             <Barcode
                                                 value={product.sku || product.sn}
                                                 format="CODE128"
-                                                width={0.8}
-                                                height={40}
+                                                width={1.5}
+                                                height={60}
                                                 displayValue={false}
                                             />
                                             <p className="text-[9px] font-black text-slate-900 text-center">
