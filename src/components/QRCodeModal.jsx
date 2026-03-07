@@ -48,7 +48,7 @@ const QRCodeModal = ({ isOpen, onClose, product }) => {
                     @page { 
                         margin: 0 !important; 
                         padding: 0 !important; 
-                        size: 55mm 35mm; 
+                        size: 50mm 38mm; 
                     }
                     * {
                         margin: 0;
