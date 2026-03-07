@@ -165,10 +165,7 @@ const BulkQRModal = ({ isOpen, onClose, products, onComplete }) => {
                             text-align: center;
                             line-height: 1.2;
                             flex-shrink: 0;
-                            display: -webkit-box;
-                            -webkit-line-clamp: 2;
-                            -webkit-box-orient: vertical;
-                            overflow: hidden;
+                            word-break: break-word;
                         }
                         svg {
                             max-width: 100% !important;
