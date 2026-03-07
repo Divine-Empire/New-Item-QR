@@ -65,7 +65,7 @@ const QRCodeModal = ({ isOpen, onClose, product }) => {
                     }
                     .page { 
                         background: white; 
-                        width: 50mm; 
+                        width: 100%; 
                         height: 38mm; 
                         margin: 0 auto; 
                         padding: 2mm; 
@@ -116,7 +116,7 @@ const QRCodeModal = ({ isOpen, onClose, product }) => {
                             padding: 2mm !important; 
                             box-shadow: none; 
                             border: none; 
-                            width: 50mm !important; 
+                            width: 100% !important; 
                             height: 38mm !important; 
                         }
                     }
