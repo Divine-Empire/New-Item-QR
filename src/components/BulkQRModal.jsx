@@ -141,13 +141,13 @@ const BulkQRModal = ({ isOpen, onClose, products, onComplete }) => {
                             padding: 0 !important; 
                             background: white; 
                             font-family: 'Inter', sans-serif;
-                            width: 55mm;
-                            height: 35mm;
+                            width: 100%;
+                            height: 100%;
                         }
                         .page { 
                             background: white; 
-                            width: 55mm; 
-                            height: 35mm; 
+                            width: 100%; 
+                            height: 100%; 
                             margin: 0; 
                             padding: 2mm 3mm; 
                             display: flex; 
@@ -156,6 +156,7 @@ const BulkQRModal = ({ isOpen, onClose, products, onComplete }) => {
                             justify-content: center; 
                             page-break-after: always;
                             overflow: hidden;
+                            box-sizing: border-box;
                         }
                         .sku {
                             font-size: 10px;
@@ -315,6 +316,7 @@ const BulkQRModal = ({ isOpen, onClose, products, onComplete }) => {
                                                 format="CODE128"
                                                 width={1.5}
                                                 height={50}
+                                                margin={0}
                                                 displayValue={false}
                                             />
                                             <p className="text-[9px] font-black text-slate-900 text-center">
