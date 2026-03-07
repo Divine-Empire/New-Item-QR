@@ -149,39 +149,41 @@ const BulkQRModal = ({ isOpen, onClose, products, onComplete }) => {
                             width: 55mm; 
                             height: 35mm; 
                             margin: 0; 
-                            padding: 1mm 2mm; 
+                            padding: 2mm 3mm; 
                             display: flex; 
                             flex-direction: column; 
                             align-items: center; 
-                            justify-content: space-between; 
+                            justify-content: center; 
                             page-break-after: always;
                             overflow: hidden;
                         }
                         .sku {
-                            font-size: 11px;
+                            font-size: 10px;
                             font-weight: 900;
-                            margin-bottom: 0px;
+                            margin-bottom: 2px;
                             width: 100%;
                             text-align: center;
-                            line-height: 1.1;
+                            line-height: 1.2;
+                            flex-shrink: 0;
                             display: -webkit-box;
                             -webkit-line-clamp: 2;
                             -webkit-box-orient: vertical;
                             overflow: hidden;
-                            word-break: break-word;
                         }
                         svg {
-                            width: 100% !important;
-                            height: 22mm !important;
+                            max-width: 100% !important;
+                            height: 16mm !important;
                             display: block;
                             margin: 0 auto;
                             flex-shrink: 0;
+                            object-fit: contain;
+                            flex-grow: 1;
                         }
                         .caption {
                             font-size: 11px;
                             font-weight: 900;
-                            margin-top: 0px;
-                            margin-bottom: 1mm;
+                            margin-top: 2px;
+                            flex-shrink: 0;
                             line-height: 1;
                         }
                         @media print { 
@@ -315,7 +317,7 @@ const BulkQRModal = ({ isOpen, onClose, products, onComplete }) => {
                                                 value={product.sku || product.sn}
                                                 format="CODE128"
                                                 width={1.5}
-                                                height={60}
+                                                height={50}
                                                 displayValue={false}
                                             />
                                             <p className="text-[9px] font-black text-slate-900 text-center">
