@@ -65,10 +65,10 @@ const QRCodeModal = ({ isOpen, onClose, product }) => {
                     }
                     .page { 
                         background: white; 
-                        width: 100%; 
-                        height: 100%; 
-                        margin: 0; 
-                        padding: 2mm 3mm; 
+                        width: 50mm; 
+                        height: 38mm; 
+                        margin: 0 auto; 
+                        padding: 2mm; 
                         display: flex; 
                         flex-direction: column; 
                         align-items: center; 
@@ -106,8 +106,8 @@ const QRCodeModal = ({ isOpen, onClose, product }) => {
                     @media print { 
                         html, body { 
                             background: white !important; 
-                            width: 55mm !important; 
-                            height: 35mm !important; 
+                            width: 50mm !important; 
+                            height: 38mm !important; 
                             margin: 0 !important; 
                             padding: 0 !important; 
                         } 
@@ -116,8 +116,8 @@ const QRCodeModal = ({ isOpen, onClose, product }) => {
                             padding: 2mm !important; 
                             box-shadow: none; 
                             border: none; 
-                            width: 55mm !important; 
-                            height: 35mm !important; 
+                            width: 50mm !important; 
+                            height: 38mm !important; 
                         }
                     }
                 </style>
