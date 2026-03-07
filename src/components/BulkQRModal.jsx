@@ -103,9 +103,9 @@ const BulkQRModal = ({ isOpen, onClose, products, onComplete }) => {
                 }
             }
 
-            // Chunk items into pages of 40
+            // Chunk items into pages of 1
             const pages = [];
-            const itemsPerPage = 40;
+            const itemsPerPage = 1;
             for (let i = 0; i < itemsToPrint.length; i += itemsPerPage) {
                 pages.push(itemsToPrint.slice(i, i + itemsPerPage));
             }
@@ -126,93 +126,92 @@ const BulkQRModal = ({ isOpen, onClose, products, onComplete }) => {
                     <style>
                         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
                         
-                        body { 
-                            margin: 0; 
-                            padding: 0; 
-                            background: #f0f0f0; 
+                        @page { 
+                            margin: 0 !important; 
+                            padding: 0 !important; 
+                            size: 55mm 35mm; 
+                        }
+                        * {
+                            margin: 0;
+                            padding: 0;
+                            box-sizing: border-box;
+                        }
+                        html, body { 
+                            margin: 0 !important; 
+                            padding: 0 !important; 
+                            background: white; 
                             font-family: 'Inter', sans-serif;
+                            width: 55mm;
+                            height: 35mm;
                         }
                         .page { 
                             background: white; 
-                            width: 210mm; 
-                            height: 297mm; 
-                            margin: 10mm auto; 
-                            padding: 5mm; 
-                            box-sizing: border-box; 
-                            display: grid; 
-                            grid-template-columns: repeat(4, 1fr); 
-                            grid-template-rows: repeat(10, 1fr); 
-                            gap: 0px; 
-                            page-break-after: always;
-                            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-                        }
-                        .cell { 
+                            width: 55mm; 
+                            height: 35mm; 
+                            margin: 0; 
+                            padding: 1mm 2mm; 
                             display: flex; 
                             flex-direction: column; 
                             align-items: center; 
                             justify-content: space-between; 
-                            padding: 3px;
-                            height: 100%;
+                            page-break-after: always;
                             overflow: hidden;
                         }
                         .sku {
-                            font-size: 10px;
+                            font-size: 11px;
                             font-weight: 900;
-                            margin-bottom: 2px;
+                            margin-bottom: 0px;
                             width: 100%;
                             text-align: center;
                             line-height: 1.1;
-                            height: 25px; /* FIXED HEIGHT */
                             display: -webkit-box;
                             -webkit-line-clamp: 2;
                             -webkit-box-orient: vertical;
                             overflow: hidden;
-                            font-size: 10px;
-                            font-weight: 900;
-                            margin-bottom: 2px;
-                            width: 100%;
-                            text-align: center;
-                            line-height: 1;
-                            /* Dynamic Height Strategy */
-                            flex-grow: 1;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            overflow: hidden;
                             word-break: break-word;
                         }
                         svg {
-                            max-width: 100%;
-                            height: 45px !important;
-                            width: auto !important;
+                            width: 100% !important;
+                            height: 22mm !important;
                             display: block;
                             margin: 0 auto;
                             flex-shrink: 0;
                         }
                         .caption {
-                            font-size: 10px;
-                            font-weight: 800;
+                            font-size: 11px;
+                            font-weight: 900;
                             margin-top: 0px;
+                            margin-bottom: 1mm;
                             line-height: 1;
                         }
                         @media print { 
-                            body { background: white; } 
-                            .page { margin: 0; box-shadow: none; border: none; }
-                            @page { margin: 0; size: A4; }
+                            html, body { 
+                                background: white !important; 
+                                width: 55mm !important; 
+                                height: 35mm !important; 
+                                margin: 0 !important; 
+                                padding: 0 !important; 
+                            } 
+                            .page { 
+                                margin: 0 !important; 
+                                padding: 2mm !important; 
+                                box-shadow: none; 
+                                border: none; 
+                                width: 55mm !important; 
+                                height: 35mm !important; 
+                            }
                         }
                     </style>
                 </head>
                 <body>
                     ${pages.map(pageItems => `
-                        <div class="page">
-                            ${pageItems.map(item => `
-                                <div class="cell">
-                                    <div class="sku">${item.productName}</div>
-                                    ${item.svg}
-                                    <div class="caption">${item.sku || item.sn}</div>
-                                </div>
-                            `).join('')}
-                        </div>
+                        ${pageItems.map(item => `
+                            <div class="page">
+                                <div class="sku">${item.productName}</div>
+                                ${item.svg}
+                                <div class="caption">${item.sku || item.sn}</div>
+                            </div>
+                        `).join('')}
                     `).join('')}
                     <script>
                         window.onload = function() {
