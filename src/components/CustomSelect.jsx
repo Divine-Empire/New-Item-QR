@@ -87,7 +87,7 @@ const CustomSelect = ({
     };
 
     const filteredOptions = options.filter(option =>
-        option.toLowerCase().includes(searchTerm.toLowerCase())
+        String(option || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     // Show items progressively based on scroll position

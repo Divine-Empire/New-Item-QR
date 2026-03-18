@@ -13,10 +13,10 @@ const ProductHistory = ({ searchTerm = '', sortOption = 'date', selectedProducts
     const filteredProducts = React.useMemo(() => products
         .filter(product => product.qrGenerated || (product.status === 'Active' && product.sn))
         .filter(product =>
-            product.productName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            product.sn?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            product.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            product.generatedBy?.toLowerCase().includes(searchTerm.toLowerCase())
+            String(product.productName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+            String(product.sn || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+            String(product.sku || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+            String(product.generatedBy || '').toLowerCase().includes(searchTerm.toLowerCase())
         )
         .sort((a, b) => {
             if (sortOption === 'name') {

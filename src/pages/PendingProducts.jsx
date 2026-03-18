@@ -2,6 +2,27 @@ import React, { useState } from 'react';
 import { Search, Clock, Trash2, Barcode, Filter } from 'lucide-react';
 import { useProduct } from '../context/ProductContext';
 
+const DebouncedSearch = ({ value, onChange, placeholder }) => {
+    const [localValue, setLocalValue] = useState(value);
+    React.useEffect(() => { setLocalValue(value); }, [value]);
+    React.useEffect(() => {
+        const timer = setTimeout(() => { if (localValue !== value) onChange(localValue); }, 300);
+        return () => clearTimeout(timer);
+    }, [localValue, value, onChange]);
+    return (
+        <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <input
+                type="text"
+                placeholder={placeholder}
+                value={localValue}
+                onChange={(e) => setLocalValue(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-light-blue-500 bg-white shadow-sm"
+            />
+        </div>
+    );
+};
+
 const PendingProducts = () => {
     const { products, deleteProduct, markQRGenerated } = useProduct();
     const [searchTerm, setSearchTerm] = useState('');
@@ -9,11 +30,11 @@ const PendingProducts = () => {
     const [isSortOpen, setIsSortOpen] = useState(false);
 
     // Treat 'Inactive' products as 'Pending'
-    const pendingProducts = products
+    const pendingProducts = React.useMemo(() => products
         .filter(product =>
             (product.status === 'Inactive' || product.status === 'Pending') &&
-            (product.productName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                product.sn?.toLowerCase().includes(searchTerm.toLowerCase()))
+            (String(product.productName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                String(product.sn || '').toLowerCase().includes(searchTerm.toLowerCase()))
         )
         .sort((a, b) => {
             if (sortOption === 'name') {
@@ -22,7 +43,7 @@ const PendingProducts = () => {
                 return (a.category || '').localeCompare(b.category || '');
             }
             return 0;
-        });
+        }), [products, searchTerm, sortOption]);
 
     return (
         <div className="p-6 space-y-4">
@@ -35,16 +56,11 @@ const PendingProducts = () => {
 
             {/* Toolbar */}
             <div className="flex flex-col sm:flex-row gap-4 shrink-0 z-20 relative">
-                <div className="relative flex-1 max-w-md">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input
-                        type="text"
-                        placeholder="Search pending products..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-light-blue-500 bg-white shadow-sm"
-                    />
-                </div>
+                <DebouncedSearch
+                    value={searchTerm}
+                    onChange={setSearchTerm}
+                    placeholder="Search pending products..."
+                />
 
                 {/* Sort Dropdown */}
                 <div className="relative">

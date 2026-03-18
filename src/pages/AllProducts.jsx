@@ -8,6 +8,38 @@ import BulkQRModal from '../components/BulkQRModal';
 import ProductHistory from './ProductHistory';
 import ConfirmModal from '../components/ConfirmModal';
 
+// Separate component to prevent parent re-renders while typing
+const DebouncedSearch = ({ value, onChange }) => {
+    const [localValue, setLocalValue] = useState(value);
+
+    // Sync local value when external value changes (e.g. clearing)
+    React.useEffect(() => {
+        setLocalValue(value);
+    }, [value]);
+
+    React.useEffect(() => {
+        const timer = setTimeout(() => {
+            if (localValue !== value) {
+                onChange(localValue);
+            }
+        }, 300); // Wait 300ms after user stops typing
+        return () => clearTimeout(timer);
+    }, [localValue, value, onChange]);
+
+    return (
+        <div className="relative max-w-md w-full md:w-80">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <input
+                type="text"
+                placeholder="Search products..."
+                value={localValue}
+                onChange={(e) => setLocalValue(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-light-blue-500 bg-slate-50 focus:bg-white shadow-sm transition-colors text-sm"
+            />
+        </div>
+    );
+};
+
 const AllProducts = ({ defaultTab = 'pending' }) => {
     const { products, loading, refreshData } = useProduct();
     const [activeTab, setActiveTab] = useState(defaultTab); // 'pending', 'history'
@@ -40,39 +72,45 @@ const AllProducts = ({ defaultTab = 'pending' }) => {
         onConfirm: () => { }
     });
 
-    const filteredProducts = React.useMemo(() => products
-        .filter(product => !product.qrGenerated)
-        .filter(product =>
-            product.productName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            product.sn?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            product.category?.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-        .sort((a, b) => {
-            if (sortOption === 'name') {
-                return (a.productName || '').localeCompare(b.productName || '');
-            } else if (sortOption === 'category') {
-                return (a.category || '').localeCompare(b.category || '');
-            }
-            return 0; // Default order (creation/insertion order usually)
-        }), [products, searchTerm, sortOption]);
+    const filteredProducts = React.useMemo(() => {
+        const lowerSearchTerm = searchTerm.toLowerCase();
+        return products
+            .filter(product => !product.qrGenerated)
+            .filter(product =>
+                String(product.productName || '').toLowerCase().includes(lowerSearchTerm) ||
+                String(product.sn || '').toLowerCase().includes(lowerSearchTerm) ||
+                String(product.category || '').toLowerCase().includes(lowerSearchTerm)
+            )
+            .sort((a, b) => {
+                if (sortOption === 'name') {
+                    return (a.productName || '').localeCompare(b.productName || '');
+                } else if (sortOption === 'category') {
+                    return (a.category || '').localeCompare(b.category || '');
+                }
+                return 0;
+            });
+    }, [products, searchTerm, sortOption]);
 
-    const filteredHistoryProducts = React.useMemo(() => products
-        .filter(product => product.qrGenerated || (product.status === 'Active' && product.sn))
-        .filter(product =>
-            product.productName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            product.sn?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            product.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            product.generatedBy?.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-        .sort((a, b) => {
-            if (sortOption === 'name') {
-                return (a.productName || '').localeCompare(b.productName || '');
-            } else if (sortOption === 'category') {
-                return (a.category || '').localeCompare(b.category || '');
-            } else {
-                return new Date(b.qrGeneratedDate || 0) - new Date(a.qrGeneratedDate || 0);
-            }
-        }), [products, searchTerm, sortOption]);
+    const filteredHistoryProducts = React.useMemo(() => {
+        const lowerSearchTerm = searchTerm.toLowerCase();
+        return products
+            .filter(product => product.qrGenerated || (product.status === 'Active' && product.sn))
+            .filter(product =>
+                String(product.productName || '').toLowerCase().includes(lowerSearchTerm) ||
+                String(product.sn || '').toLowerCase().includes(lowerSearchTerm) ||
+                String(product.sku || '').toLowerCase().includes(lowerSearchTerm) ||
+                String(product.generatedBy || '').toLowerCase().includes(lowerSearchTerm)
+            )
+            .sort((a, b) => {
+                if (sortOption === 'name') {
+                    return (a.productName || '').localeCompare(b.productName || '');
+                } else if (sortOption === 'category') {
+                    return (a.category || '').localeCompare(b.category || '');
+                } else {
+                    return new Date(b.qrGeneratedDate || 0) - new Date(a.qrGeneratedDate || 0);
+                }
+            });
+    }, [products, searchTerm, sortOption]);
 
     const activeFilteredProducts = activeTab === 'pending' ? filteredProducts : filteredHistoryProducts;
 
@@ -201,16 +239,7 @@ const AllProducts = ({ defaultTab = 'pending' }) => {
             {/* Search Bar - Shifted Here as per request */}
             {/* Search Bar & Sort */}
             <div className="flex gap-2 w-full md:w-auto pb-3 md:pb-0">
-                <div className="relative max-w-md w-full md:w-80">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input
-                        type="text"
-                        placeholder="Search products..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-light-blue-500 bg-slate-50 focus:bg-white shadow-sm transition-colors text-sm"
-                    />
-                </div>
+                <DebouncedSearch value={searchTerm} onChange={setSearchTerm} />
 
                 {/* Sort Dropdown */}
                 <div className="relative">
